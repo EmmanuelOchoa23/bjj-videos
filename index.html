@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BJJ Videos</title>
+<meta name="theme-color" content="#1f4fd8">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="login" class="center" hidden>
+  <div class="loginbox">
+    <img src="icon-192.png" width="72" height="72" alt="">
+    <h1>BJJ Videos</h1>
+    <p>Tu biblioteca de técnicas, en la PC y en el celular.</p>
+    <button class="p big" id="gbtn">Entrar con Google</button>
+    <p id="lerr" class="err"></p>
+  </div>
+</div>
+
+<div id="app" hidden>
+<header>
+  <button id="menu" class="icon" aria-label="Ver posiciones">☰</button>
+  <h1>🥋 BJJ Videos</h1>
+  <input id="q" type="search" placeholder="Buscar título, técnica, nota…">
+  <button class="p" id="add">+ Agregar</button>
+  <details class="more">
+    <summary class="btn">⋯</summary>
+    <div class="pop">
+      <div id="who" class="mut"></div>
+      <button id="exp">Descargar respaldo</button>
+      <button id="imp">Cargar respaldo</button>
+      <button id="out" hidden>Cerrar sesión</button>
+    </div>
+  </details>
+  <input type="file" id="file" accept=".json" hidden>
+</header>
+<div id="localwarn" class="warn" hidden>Modo local: los videos se guardan solo en este navegador hasta que conectemos la nube.</div>
+
+<div class="layout">
+  <aside id="side">
+    <div id="tree"></div>
+    <button id="newposside" class="ghost">+ Nueva posición</button>
+  </aside>
+  <main>
+    <div class="bar">
+      <div id="crumb"></div>
+      <div class="chips">
+        <button class="chip" data-f="gi" data-v="gi">Gi</button>
+        <button class="chip" data-f="gi" data-v="nogi">No-gi</button>
+        <button class="chip" data-f="fav">⭐ Favoritos</button>
+        <button class="chip" data-f="prac">🔁 Por practicar</button>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
+</div>
+
+<dialog id="ed">
+  <form method="dialog" id="f">
+    <h3 id="edt">Agregar video</h3>
+    <label for="url">Link de YouTube</label>
+    <input id="url" required inputmode="url" placeholder="https://youtu.be/...">
+    <label for="title">Tu título</label>
+    <input id="title" placeholder="Ej: Triángulo desde guardia cerrada – detalle de la cadera">
+    <div class="mut small" id="yttitle"></div>
+    <div class="row">
+      <div><label for="pos">Posición</label>
+        <div class="sel"><select id="pos"></select><button type="button" id="newpos" title="Nueva posición">+</button></div></div>
+      <div><label for="act">Acción</label>
+        <div class="sel"><select id="act"></select><button type="button" id="newact" title="Nueva acción">+</button></div></div>
+    </div>
+    <label for="tec">Técnica</label>
+    <input id="tec" list="tecs" placeholder="Ej: Triángulo">
+    <datalist id="tecs"></datalist>
+    <div class="row">
+      <div><label for="start">Empieza en (min:seg)</label><input id="start" placeholder="Ej: 3:25" inputmode="numeric"></div>
+      <div><label for="gi">Modalidad</label>
+        <select id="gi"><option value="gi">Gi</option><option value="nogi">No-gi</option><option value="ambos">Ambos</option></select></div>
+    </div>
+    <div class="row checks">
+      <label><input type="checkbox" id="fav"> ⭐ Favorito</label>
+      <label><input type="checkbox" id="prac"> 🔁 Por practicar</label>
+    </div>
+    <label for="notes">Notas</label>
+    <textarea id="notes" rows="3" placeholder="Detalles, errores comunes, tips…"></textarea>
+    <div class="foot"><button type="button" id="cx">Cancelar</button><button class="p">Guardar</button></div>
+  </form>
+</dialog>
+
+<dialog id="pl">
+  <div id="plc"></div>
+  <h3 id="plt"></h3>
+  <div class="mut small" id="plp"></div>
+  <label for="pln">Notas</label>
+  <textarea id="pln" rows="3" placeholder="Escribí tus notas…"></textarea>
+  <div class="foot">
+    <a id="yt" target="_blank" rel="noopener">Abrir en YouTube ↗</a>
+    <span id="plsaved" class="mut small"></span>
+    <button id="plx">Cerrar</button>
+  </div>
+</dialog>
+
+<div id="toast"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
