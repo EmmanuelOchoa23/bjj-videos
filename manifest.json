@@ -1,7 +1,7 @@
 {
-  "name": "BJJ Videos",
-  "short_name": "BJJ Videos",
-  "description": "Tu biblioteca de técnicas de jiu jitsu con videos de YouTube",
+  "name": "BJJ Second Brain",
+  "short_name": "BJJ Second Brain",
+  "description": "Tu segundo cerebro de jiu jitsu: técnicas, videos y combos",
   "lang": "es",
   "start_url": "./",
   "scope": "./",

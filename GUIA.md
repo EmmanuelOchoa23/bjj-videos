@@ -1,4 +1,11 @@
-# BJJ Videos – guía
+# BJJ Second Brain – guía
+
+App: https://emmanuelochoa23.github.io/bjj-videos/
+
+## Pendientes (ideas para más adelante)
+- [ ] **Limitar quién entra**: lista de emails autorizados (hoy cualquiera con el link puede crearse una cuenta, pero nunca ve tus videos).
+- [ ] **Compartir entre amigos**: ver combos o videos de otros, o una biblioteca del grupo.
+- [ ] **Pasar el chat de Claude a la nube**, para trabajar con la PC apagada.
 
 ## Qué hay en esta carpeta
 | Archivo | Para qué sirve |
@@ -26,7 +33,7 @@ Después, en Firebase → Authentication → **Configuración → Dominios autor
 
 ## Paso 3 – Instalarla en el celular (Android)
 1. Abrí el link en Chrome → menú ⋮ → **Instalar app** / **Agregar a pantalla principal**.
-2. En YouTube: **Compartir** → elegí **BJJ Videos** → se abre el formulario con el link y el minuto.
+2. En YouTube o Instagram: **Compartir** → elegí **BJJ Second Brain** → se abre el formulario con el link.
 
 > En iPhone se puede instalar (Safari → Compartir → "Agregar a inicio"), pero iOS no deja que aparezca en el menú Compartir de YouTube: ahí hay que copiar y pegar el link.
 
@@ -37,5 +44,7 @@ Después, en Firebase → Authentication → **Configuración → Dominios autor
 - **Empieza en**: si el link de YouTube trae el minuto (`&t=85s`) se completa solo; si no, escribilo (ej. `3:25`).
 - **+ Recorte**: guarda otra técnica del mismo video, con otro minuto.
 - **Notas**: se editan directo debajo de cada video o mientras lo mirás.
-- **⭐ / 🔁**: favorito y por practicar. Filtros arriba: Gi, No-gi, ⭐, 🔁.
+- **🥋 / 🔁 / ⭐**: entrenando, por practicar y favorito. La lista se ordena en ese orden. Filtros arriba: Gi, No-gi, ⭐, 🔁, 🥋.
+- **Combos**: árbol desde una posición; cada cuadrito tiene 📝 descripción, ▶ video (YouTube o Instagram), ✎ editar y ＋ técnica siguiente.
+- **Login**: con Google o con email y contraseña. Cada usuario tiene su propia biblioteca.
 - **⋯ → Descargar respaldo**: guarda una copia de todo en un archivo.
