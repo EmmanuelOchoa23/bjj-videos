@@ -121,7 +121,14 @@ if (!store.user) {
   $('#localwarn').hidden = store.mode !== 'local';
   $('#who').textContent = store.user.email || store.user.name;
   if (store.logout) { $('#out').hidden = false; $('#out').onclick = store.logout; }
-  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    // Busca una versión nueva cada vez que se abre la app; si la hay, recarga una vez.
+    const hadSW = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {});
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hadSW && !sessionStorage.getItem('bjj-reloaded')) { sessionStorage.setItem('bjj-reloaded', '1'); location.reload(); }
+    });
+  }
   init();
 }
 
