@@ -277,3 +277,25 @@ input[type=checkbox]{accent-color:var(--ac);width:18px;height:18px}
   .bottomnav button.on{color:var(--tx)}
   .bottomnav button.on .ti{filter:none;opacity:1;transform:translateY(-1px)}
 }
+
+/* ===== Acceso: pantalla de espera y administrador ===== */
+.gic{font-size:42px;margin-top:4px}
+.gh{margin:6px 0 8px;font-size:24px}
+.gp{line-height:1.55;margin:0 0 20px}
+.gbtns{display:flex;flex-direction:column;gap:8px}
+.gbtns .big{width:100%}
+.adminbar{display:flex;align-items:center;gap:8px;width:100%;text-align:left;margin-bottom:14px;padding:12px 16px;border-radius:var(--r);background:var(--bg2)}
+.adminbar .harr{margin-left:auto;font-size:24px}
+.adminbar.alert{background:linear-gradient(135deg,#4a3410,#2a200c);border-color:#8a6a24;color:#ffe3a3}
+.admin{max-width:640px}
+.person{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--r);background:var(--card);border:1px solid var(--bd);margin-bottom:8px;flex-wrap:wrap}
+.person.me{border-color:#34508f}
+.person.dim{opacity:.7}
+.person .px{flex:1;min-width:160px;display:flex;flex-direction:column;overflow:hidden}
+.person .px b{overflow:hidden;text-overflow:ellipsis}
+.person .pb{display:flex;gap:6px}
+.person .pb button{padding:6px 12px;font-size:13px}
+.pempty{padding:4px 2px 8px}
+#arej h3{margin-top:16px}
+.aform{display:flex;gap:8px;margin-bottom:10px}
+.aform input{flex:1;min-width:0}

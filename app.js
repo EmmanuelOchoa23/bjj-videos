@@ -109,15 +109,63 @@ async function firebaseStore() {
   };
   const resetPass = mail => A.sendPasswordResetEmail(auth, mail);
   if (!user) return { mode: 'cloud', user: null, login, emailLogin, emailSignup, resetPass };
+  const logout = () => A.signOut(auth).then(() => location.reload());
+  const who = { name: user.displayName || user.email, email: user.email };
+  const myEmail = (user.email || '').toLowerCase();
+
+  /* --- Control de acceso ---
+     1) Cuentas con contraseña: tienen que confirmar el email (link que manda Firebase).
+     2) Si las reglas no lo dejan leer sus datos, no está autorizado: se crea (o se muestra) su solicitud. */
+  const isPassword = user.providerData.some(p => p.providerId === 'password');
+  if (isPassword && !user.emailVerified) {
+    return {
+      mode: 'cloud', user: who, gate: 'verify', logout,
+      resend: () => A.sendEmailVerification(user),
+      recheck: async () => { await user.reload(); await user.getIdToken(true); location.reload(); },
+    };
+  }
   const base = `users/${user.uid}`;
+  let allowed = true;
+  try { await F.getDocFromServer(F.doc(db, base, 'meta', 'tax')); }
+  catch (e) { if (e.code === 'permission-denied') allowed = false; } // sin conexión: se deja pasar (usa lo guardado)
+  if (!allowed) {
+    const reqRef = F.doc(db, 'requests', user.uid);
+    let status = 'pending';
+    try {
+      const r = await F.getDocFromServer(reqRef);
+      if (r.exists()) status = r.data().status || 'pending';
+      else await F.setDoc(reqRef, { email: myEmail, name: user.displayName || '', createdAt: Date.now() });
+    } catch (e) { console.error(e); }
+    return { mode: 'cloud', user: who, gate: status === 'rejected' ? 'rejected' : 'pending', logout, recheck: () => location.reload() };
+  }
+
+  /* --- Herramientas del administrador (solo funcionan si las reglas lo reconocen como admin) --- */
+  const reqCol = F.collection(db, 'requests'), allowCol = F.collection(db, 'allowed');
+  const admin = {
+    // cb recibe {requests, allowed}; si no es admin, nunca se llama
+    watch(cb) {
+      const s = { requests: null, allowed: null };
+      const emit = () => { if (s.requests && s.allowed) cb({ ...s }); };
+      F.onSnapshot(reqCol, q => { s.requests = q.docs.map(d => ({ uid: d.id, ...d.data() })); emit(); }, () => {});
+      F.onSnapshot(allowCol, q => { s.allowed = q.docs.map(d => ({ id: d.id, ...d.data() })); emit(); }, () => {});
+    },
+    async accept(r) {
+      await F.setDoc(F.doc(allowCol, r.email.toLowerCase()), { email: r.email.toLowerCase(), name: r.name || '', addedAt: Date.now() });
+      await F.deleteDoc(F.doc(reqCol, r.uid));
+    },
+    reject: r => F.updateDoc(F.doc(reqCol, r.uid), { status: 'rejected' }),
+    forget: r => F.deleteDoc(F.doc(reqCol, r.uid)),
+    add: em => F.setDoc(F.doc(allowCol, em.toLowerCase()), { email: em.toLowerCase(), name: '', addedAt: Date.now() }),
+    remove: em => F.deleteDoc(F.doc(allowCol, em.toLowerCase())),
+    me: myEmail,
+  };
   const clipsCol = F.collection(db, base, 'clips');
   const combosCol = F.collection(db, base, 'combos');
   const notesCol = F.collection(db, base, 'notes');
   const taxDoc = F.doc(db, base, 'meta', 'tax');
   const st = { clips: [], tax: [], combos: [], notes: [] };
   return {
-    mode: 'cloud', user: { name: user.displayName || user.email, email: user.email }, login,
-    logout: () => A.signOut(auth).then(() => location.reload()),
+    mode: 'cloud', user: who, login, logout, admin,
     start(cb) {
       F.onSnapshot(clipsCol, q => { st.clips = q.docs.map(d => ({ id: d.id, ...d.data() })); cb({ ...st }); });
       F.onSnapshot(combosCol, q => { st.combos = q.docs.map(d => ({ id: d.id, ...d.data() })); cb({ ...st }); });
@@ -185,6 +233,26 @@ if (!store.user) {
     try { await store.resetPass(mail); msg('', t('Si hay una cuenta con ese email, te llegó un correo para crear una contraseña nueva (mirá también en spam).')); }
     catch (err) { msg(authMsg(err)); }
   };
+} else if (store.gate) {
+  /* Pantalla de espera: confirmar email, solicitud pendiente o rechazada */
+  const G = {
+    verify:   { ic: '✉️', h: 'Confirmá tu email', p: 'Te mandamos un email a {e}. Tocá el link que viene adentro y después volvé acá y tocá "Ya lo confirmé". Si no lo ves, mirá en spam.' },
+    pending:  { ic: '⏳', h: 'Solicitud enviada', p: 'Tu cuenta ({e}) está esperando que el administrador la acepte. Cuando te acepte, volvé a abrir la app.' },
+    rejected: { ic: '🚫', h: 'Solicitud rechazada', p: 'El administrador no aceptó la cuenta {e}. Si creés que es un error, hablalo con él.' },
+  }[store.gate];
+  $('#gate').hidden = false;
+  $('#gic').textContent = G.ic;
+  $('#gh').textContent = t(G.h);
+  $('#gp').textContent = t(G.p, { e: store.user.email });
+  $('#gcheck').textContent = t(store.gate === 'verify' ? 'Ya lo confirmé' : 'Revisar de nuevo');
+  $('#gcheck').hidden = store.gate === 'rejected';
+  $('#gcheck').onclick = () => store.recheck();
+  $('#gresend').hidden = store.gate !== 'verify';
+  $('#gresend').onclick = async () => {
+    try { await store.resend(); $('#gmsg').textContent = t('Listo, te mandamos el email de nuevo.'); }
+    catch (e) { $('#gmsg').textContent = authMsg(e); }
+  };
+  $('#gout').onclick = store.logout;
 } else {
   $('#app').hidden = false;
   $('#localwarn').hidden = store.mode !== 'local';
@@ -224,9 +292,10 @@ function init() {
     videos: { el: '#vVideos', title: 'Técnicas', add: '+ Técnica' },
     combos: { el: '#vCombos', title: 'Combos',   add: '+ Combo' },
     notas:  { el: '#vNotas',  title: 'Notas',    add: '+ Nota' },
+    admin:  { el: '#vAdmin',  title: 'Usuarios', add: null },
   };
   function setView(v, push = true) {
-    if (!VIEWS[v]) v = 'home';
+    if (!VIEWS[v] || (v === 'admin' && !adminData)) v = 'home';
     view = v;
     for (const [k, o] of Object.entries(VIEWS)) $(o.el).hidden = k !== v;
     document.querySelectorAll('[data-go]').forEach(b => b.classList.toggle('on', b.dataset.go === v));
@@ -238,6 +307,7 @@ function init() {
     if (v === 'combos') renderCombos();
     if (v === 'notas') renderNotes();
     if (v === 'home') renderHome();
+    if (v === 'admin') renderAdmin();
     window.scrollTo(0, 0);
   }
   document.addEventListener('click', e => {
@@ -254,6 +324,7 @@ function init() {
      ===================================================== */
   const plural = (n, s, p) => t(n === 1 ? s : p, { n });
   function renderHome() {
+    renderAdminBanner();
     const tr = data.clips.filter(c => c.train).length;
     $('#hcTec').textContent = plural(data.clips.length, '{n} técnica guardada', '{n} técnicas guardadas') + (tr ? t(' · {n} entrenando', { n: tr }) : '');
     $('#hcCom').textContent = data.combos.length ? plural(data.combos.length, '{n} combo', '{n} combos') : t('Armá cadenas de técnicas en árbol');
@@ -268,6 +339,59 @@ function init() {
       </button>` : '';
   }
   $('#hnext').onclick = e => { const b = e.target.closest('[data-hn]'); if (b) openNote(data.notes.find(n => n.id === b.dataset.hn)); };
+
+  /* =====================================================
+     ADMINISTRADOR: solicitudes y usuarios autorizados
+     (solo aparece si las reglas de Firebase te reconocen como admin)
+     ===================================================== */
+  let adminData = null;
+  const pendingReqs = () => (adminData?.requests || []).filter(r => r.status !== 'rejected').sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  function renderAdminBanner() {
+    if (!adminData) { $('#hadmin').innerHTML = ''; $('#madmin').hidden = true; return; }
+    $('#madmin').hidden = false;
+    const n = pendingReqs().length;
+    $('#hadmin').innerHTML = n
+      ? `<button class="adminbar alert" data-go="admin">🔔 <b>${t(n === 1 ? '{n} solicitud pendiente' : '{n} solicitudes pendientes', { n })}</b><span class="harr">›</span></button>`
+      : `<button class="adminbar" data-go="admin">👥 ${t('Usuarios autorizados')} <span class="mut">· ${adminData.allowed.length}</span><span class="harr">›</span></button>`;
+  }
+  const personHTML = (name, email) => `<span class="px">${name ? `<b>${esc(name)}</b><span class="mut small">${esc(email)}</span>` : `<b>${esc(email)}</b>`}</span>`;
+  function renderAdmin() {
+    if (!adminData) return;
+    const pend = pendingReqs(), rej = adminData.requests.filter(r => r.status === 'rejected');
+    $('#areq').innerHTML = pend.length
+      ? pend.map(r => `<div class="person">${personHTML(r.name, r.email)}
+          <span class="pb"><button class="p" data-acc="${r.uid}">✅ ${t('Aceptar')}</button><button data-rej="${r.uid}">❌ ${t('Rechazar')}</button></span></div>`).join('')
+      : `<div class="mut small pempty">${t('No hay solicitudes pendientes.')}</div>`;
+    $('#arej').innerHTML = rej.length ? `<h3>${t('Rechazadas')}</h3>` + rej.map(r => `<div class="person dim">${personHTML(r.name, r.email)}
+          <span class="pb"><button data-acc="${r.uid}">${t('Aceptar')}</button><button data-fgt="${r.uid}" title="${t('Borrar')}">🗑</button></span></div>`).join('') : '';
+    const al = [...adminData.allowed].sort((a, b) => a.email.localeCompare(b.email));
+    $('#aall').innerHTML = `<div class="person me">${personHTML('', store.admin.me)}<span class="badge">${t('Administrador')}</span></div>`
+      + al.filter(a => a.email !== store.admin.me).map(a => `<div class="person">${personHTML(a.name, a.email)}
+          <span class="pb"><button data-rm="${esc(a.email)}">${t('Quitar')}</button></span></div>`).join('');
+  }
+  $('#vAdmin').addEventListener('click', async e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const d = b.dataset, find = uid => adminData.requests.find(r => r.uid === uid);
+    try {
+      if (d.acc) { b.disabled = true; await store.admin.accept(find(d.acc)); toast(t('Aceptado')); }
+      else if (d.rej && confirm(t('¿Rechazar a {e}?', { e: find(d.rej).email }))) { await store.admin.reject(find(d.rej)); toast(t('Rechazado')); }
+      else if (d.fgt) { await store.admin.forget(find(d.fgt)); }
+      else if (d.rm && confirm(t('¿Quitarle el acceso a {e}? Sus datos no se borran, pero no va a poder entrar.', { e: d.rm }))) { await store.admin.remove(d.rm); toast(t('Acceso quitado')); }
+    } catch (err) { b.disabled = false; alert(t('No se pudo guardar: {e}', { e: err.message })); }
+  });
+  $('#aform').onsubmit = async e => {
+    e.preventDefault();
+    const em = $('#amail').value.trim().toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(em)) return alert(t('Ese email no es válido.'));
+    try { await store.admin.add(em); $('#amail').value = ''; toast(t('Autorizado')); }
+    catch (err) { alert(t('No se pudo guardar: {e}', { e: err.message })); }
+  };
+  if (store.admin) store.admin.watch(d => {
+    adminData = d;
+    renderAdminBanner();
+    if (view === 'admin') renderAdmin();
+    if (first === false && location.hash === '#admin' && view !== 'admin') setView('admin', false);
+  });
 
   /* =====================================================
      ÁRBOL LATERAL (posición → acción → técnica)

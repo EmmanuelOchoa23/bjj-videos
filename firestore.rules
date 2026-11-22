@@ -1,9 +1,38 @@
 rules_version = '2';
+// Reglas de seguridad de BJJ Second Brain.
+// Antes de pegarlas en Firebase, reemplazá ADMIN_EMAIL por el email del administrador
+// (la versión lista para pegar está en firestore.rules.local, que no se sube a GitHub).
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Cada usuario solo puede leer y escribir sus propios videos.
+
+    function signedIn() { return request.auth != null; }
+    function email()    { return request.auth.token.email.lower(); }
+    // Google ya confirma el email; las cuentas con contraseña tienen que confirmarlo con el link.
+    function verified() { return request.auth.token.email_verified == true; }
+    function isAdmin()  { return signedIn() && verified() && email() == 'ADMIN_EMAIL'; }
+    function isAllowed() {
+      return signedIn() && verified() &&
+        (isAdmin() || exists(/databases/$(database)/documents/allowed/$(email())));
+    }
+
+    // Datos de cada usuario: solo el dueño, y solo si está autorizado.
     match /users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if isAllowed() && request.auth.uid == uid;
+    }
+
+    // Lista de emails autorizados: la maneja el administrador.
+    // Cada usuario puede consultar solo su propio email.
+    match /allowed/{em} {
+      allow read: if isAdmin() || (signedIn() && email() == em);
+      allow write: if isAdmin();
+    }
+
+    // Solicitudes de acceso: cada uno crea la suya; el administrador acepta o rechaza.
+    match /requests/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create: if signedIn() && request.auth.uid == uid && request.resource.data.email == email();
+      allow update: if isAdmin();
+      allow delete: if isAdmin() || (signedIn() && request.auth.uid == uid);
     }
   }
 }

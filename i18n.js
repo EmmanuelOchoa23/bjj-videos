@@ -121,6 +121,24 @@ const EN = {
   'Qué querés practicar ese día…': 'What you want to practice that day…',
   'Ej: Siempre cerrar las rodillas en el triángulo.': 'E.g. Always squeeze the knees in the triangle.',
 
+  // --- Acceso / administrador ---
+  'Confirmá tu email': 'Confirm your email', 'Solicitud enviada': 'Request sent', 'Solicitud rechazada': 'Request declined',
+  'Te mandamos un email a {e}. Tocá el link que viene adentro y después volvé acá y tocá "Ya lo confirmé". Si no lo ves, mirá en spam.':
+    'We sent an email to {e}. Tap the link inside, then come back and tap "I confirmed it". If you don’t see it, check your spam folder.',
+  'Tu cuenta ({e}) está esperando que el administrador la acepte. Cuando te acepte, volvé a abrir la app.':
+    'Your account ({e}) is waiting for the administrator to accept it. Once accepted, open the app again.',
+  'El administrador no aceptó la cuenta {e}. Si creés que es un error, hablalo con él.':
+    'The administrator did not accept the account {e}. If you think this is a mistake, talk to them.',
+  'Ya lo confirmé': 'I confirmed it', 'Revisar de nuevo': 'Check again', 'Reenviar email': 'Resend email',
+  'Listo, te mandamos el email de nuevo.': 'Done, we sent the email again.',
+  'Usuarios': 'Users', 'Usuarios autorizados': 'Authorized users', '👥 Usuarios autorizados': '👥 Authorized users',
+  'Solicitudes pendientes': 'Pending requests', '{n} solicitud pendiente': '{n} pending request', '{n} solicitudes pendientes': '{n} pending requests',
+  'Aceptar': 'Accept', 'Rechazar': 'Decline', 'Rechazadas': 'Declined', 'Quitar': 'Remove', 'Administrador': 'Admin',
+  'No hay solicitudes pendientes.': 'No pending requests.', 'Email para autorizar': 'Email to authorize', 'Agregar': 'Add',
+  'Aceptado': 'Accepted', 'Rechazado': 'Declined', 'Autorizado': 'Authorized', 'Acceso quitado': 'Access removed',
+  '¿Rechazar a {e}?': 'Decline {e}?',
+  '¿Quitarle el acceso a {e}? Sus datos no se borran, pero no va a poder entrar.': 'Remove access for {e}? Their data is not deleted, but they won’t be able to sign in.',
+
   // --- Respaldo ---
   '¿Cargar {a} técnicas, {b} combos y {c} notas del respaldo?': 'Load {a} techniques, {b} combos and {c} notes from the backup?',
   'Respaldo cargado': 'Backup restored', 'Ese archivo no es un respaldo válido.': "That file isn't a valid backup.",

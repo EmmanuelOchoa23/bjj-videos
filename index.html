@@ -9,12 +9,12 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0e1014">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png?v=13">
-<link rel="apple-touch-icon" href="icon-192.png?v=13">
+<link rel="icon" href="icon-192.png?v=14">
+<link rel="apple-touch-icon" href="icon-192.png?v=14">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
 
@@ -42,6 +42,23 @@
   </div>
 </div>
 
+<!-- ===== Espera: confirmar email / solicitud pendiente / rechazada ===== -->
+<div id="gate" class="center" hidden>
+  <div class="lfix"><div class="langsw" role="group" aria-label="Idioma"><button data-lang="es">ES</button><button data-lang="en">EN</button></div></div>
+  <div class="loginbox">
+    <div class="avatar sm"><img src="icon-512.png" alt=""></div>
+    <div class="gic" id="gic"></div>
+    <h2 class="gh" id="gh"></h2>
+    <p class="gp mut" id="gp"></p>
+    <div class="gbtns">
+      <button class="p big" id="gcheck"></button>
+      <button class="big" id="gresend" hidden>Reenviar email</button>
+      <button class="big" id="gout">Cerrar sesión</button>
+    </div>
+    <p id="gmsg" class="ok small"></p>
+  </div>
+</div>
+
 <div id="app" hidden>
 <header id="top">
   <button id="menu" class="icon" aria-label="Ver posiciones">☰</button>
@@ -59,6 +76,7 @@
     <summary class="btn" aria-label="Más opciones">⋯</summary>
     <div class="pop">
       <div id="who" class="mut"></div>
+      <button id="madmin" data-go="admin" hidden>👥 Usuarios autorizados</button>
       <button id="exp">Descargar respaldo</button>
       <button id="imp">Cargar respaldo</button>
       <button id="out" hidden>Cerrar sesión</button>
@@ -80,6 +98,7 @@
     <h1 class="brand">Second Brain</h1>
     <p class="tagline">Todo lo que aprendés en el tatami, en un solo lugar.</p>
   </div>
+  <div id="hadmin"></div>
   <div id="hnext"></div>
   <div class="hcards">
     <button class="hcard" data-go="videos">
@@ -142,6 +161,23 @@
 <!-- ===== Vista: notas ===== -->
 <section id="vNotas" class="page" hidden>
   <div id="nlist"></div>
+</section>
+
+<!-- ===== Vista: administrador ===== -->
+<section id="vAdmin" class="page admin" hidden>
+  <div class="nsec">
+    <h3>Solicitudes pendientes</h3>
+    <div id="areq"></div>
+    <div id="arej"></div>
+  </div>
+  <div class="nsec">
+    <h3>Usuarios autorizados</h3>
+    <form id="aform" class="aform">
+      <input id="amail" type="email" placeholder="Email para autorizar">
+      <button class="p">Agregar</button>
+    </form>
+    <div id="aall"></div>
+  </div>
 </section>
 
 <!-- Barra inferior (celular) -->
@@ -275,6 +311,6 @@
 </dialog>
 
 <div id="toast"></div>
-<script type="module" src="app.js?v=13"></script>
+<script type="module" src="app.js?v=14"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 App: https://emmanuelochoa23.github.io/bjj-videos/
 
 ## Pendientes (ideas para más adelante)
-- [ ] **Limitar quién entra**: lista de emails autorizados (hoy cualquiera con el link puede crearse una cuenta, pero nunca ve tus videos).
+- [x] **Limitar quién entra**: hecho. Los nuevos usuarios mandan una solicitud y el administrador la acepta desde la app (Inicio → aviso de solicitudes).
 - [ ] **Compartir entre amigos**: ver combos o videos de otros, o una biblioteca del grupo.
 - [ ] **Pasar el chat de Claude a la nube**, para trabajar con la PC apagada.
 
