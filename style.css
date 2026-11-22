@@ -57,6 +57,9 @@ main{flex:1;min-width:0}
 .th img{width:100%;height:100%;object-fit:cover;display:block}
 .th .pl{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:34px;text-shadow:0 0 8px #000}
 .th .t{position:absolute;right:6px;bottom:6px;background:#000c;color:#fff;font-size:12px;padding:1px 6px;border-radius:4px}
+.th.ig{background:linear-gradient(45deg,#f09433,#dc2743 50%,#bc1888)}
+.th .igl{position:absolute;left:10px;top:8px;color:#fff;font-weight:700;font-size:15px}
+#pl iframe.ig{aspect-ratio:auto;height:min(75vh,720px);max-width:420px;margin:0 auto 10px;background:#fff}
 .badge{display:inline-block;font-size:11px;border:1px solid var(--bd);border-radius:4px;padding:0 5px;color:var(--mut)}
 .body textarea{width:100%;font-size:13px;resize:vertical;min-height:38px;border-style:dashed}
 .act{display:flex;gap:4px;flex-wrap:wrap}
@@ -115,6 +118,6 @@ dialog input:not([type=checkbox]),dialog select,dialog textarea{width:100%}
   body.side aside{transform:none;box-shadow:0 0 0 100vmax #0006}
   .list{grid-template-columns:1fr}
   .row{flex-direction:column;gap:0}
-  .row.checks{flex-direction:row;gap:16px}
+  .row.checks{flex-direction:row;gap:12px;flex-wrap:wrap}
   .diagram{height:calc(100vh - 220px)}
 }

@@ -16,6 +16,16 @@ function ytStart(u) {
   const g = k => +((v.match(new RegExp('(\\d+)' + k)) || [])[1] || 0);
   return g('h') * 3600 + g('m') * 60 + g('s');
 }
+/* Instagram: publicaciones y reels públicos (sin minuto de inicio ni miniatura) */
+const igId = u => (String(u).match(/instagram\.com\/(?:[\w.]+\/)?(?:p|reels?|tv)\/([\w-]+)/) || [])[1];
+/* Devuelve {yt,ig,start} a partir de un link, o null si no es de YouTube ni Instagram */
+function parseVideo(u, startTxt) {
+  const y = ytId(u); if (y) return { yt: y, ig: null, start: startTxt != null && startTxt !== '' ? parseT(startTxt) : ytStart(u) };
+  const i = igId(u); if (i) return { yt: null, ig: i, start: 0 };
+  return null;
+}
+const videoUrl = v => v.ig ? `https://www.instagram.com/p/${v.ig}/` : v.yt ? `https://youtu.be/${v.yt}` : '';
+const hasVideo = v => !!(v.yt || v.ig);
 const parseT = s => { if (!s) return 0; const p = String(s).trim().split(':').map(Number); return p.some(isNaN) ? 0 : p.reduce((a, b) => a * 60 + b, 0); };
 const fmtT = n => { if (!n) return ''; const h = Math.floor(n / 3600), m = Math.floor(n % 3600 / 60), s = n % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0'); };
 function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => e.classList.remove('show'), 1800); }
@@ -118,7 +128,7 @@ if (!store.user) {
 function init() {
   let data = { clips: [], tax: [], combos: [] };
   let sel = { pos: null, act: null, tec: null };
-  const flt = { gi: null, fav: false, prac: false };
+  const flt = { gi: null, fav: false, prac: false, train: false };
   const opened = new Set();
   let view = 'videos', comboId = null;
   let editing = null, first = true;
@@ -211,6 +221,7 @@ function init() {
     if (flt.gi && c.gi !== flt.gi && c.gi !== 'ambos') return false;
     if (flt.fav && !c.fav) return false;
     if (flt.prac && !c.prac) return false;
+    if (flt.train && !c.train) return false;
     const q = $('#q').value.trim().toLowerCase();
     return !q || [c.title, c.ytTitle, c.pos, c.act, c.tec, c.notes].join(' ').toLowerCase().includes(q);
   }
@@ -221,15 +232,18 @@ function init() {
     return `<div class="item ${open ? 'open' : ''}">
       <button class="head" data-open="${c.id}">
         <span class="hx"><span class="tt">${esc(c.title || c.ytTitle || 'Sin título')}</span><span class="path">${esc(path)}</span></span>
-        <span class="mk">${c.fav ? '⭐' : ''}${c.prac ? '🔁' : ''}</span><span class="chev">▸</span>
+        <span class="mk">${c.fav ? '⭐' : ''}${c.prac ? '🔁' : ''}${c.train ? '🥋' : ''}</span><span class="chev">▸</span>
       </button>
       ${open ? `<div class="body">
-        <button class="th" data-play="${c.id}" aria-label="Ver video"><img loading="lazy" alt="" src="https://i.ytimg.com/vi/${c.yt}/mqdefault.jpg"><span class="pl">▶</span>${c.start ? `<span class="t">desde ${fmtT(c.start)}</span>` : ''}</button>
-        <div><span class="badge">${GI[c.gi] || 'Gi'}</span></div>
+        ${c.ig
+          ? `<button class="th ig" data-play="${c.id}" aria-label="Ver video de Instagram"><span class="igl">Instagram</span><span class="pl">▶</span></button>`
+          : `<button class="th" data-play="${c.id}" aria-label="Ver video"><img loading="lazy" alt="" src="https://i.ytimg.com/vi/${c.yt}/mqdefault.jpg"><span class="pl">▶</span>${c.start ? `<span class="t">desde ${fmtT(c.start)}</span>` : ''}</button>`}
+        <div><span class="badge">${GI[c.gi] || 'Gi'}</span>${c.ig ? ' <span class="badge">Instagram</span>' : ''}</div>
         <textarea data-note="${c.id}" rows="2" placeholder="Notas…">${esc(c.notes)}</textarea>
         <div class="act">
           <button class="tg ${c.fav ? 'on' : ''}" data-tg="fav" data-id="${c.id}" title="Favorito">⭐</button>
           <button class="tg ${c.prac ? 'on' : ''}" data-tg="prac" data-id="${c.id}" title="Por practicar">🔁</button>
+          <button class="tg ${c.train ? 'on' : ''}" data-tg="train" data-id="${c.id}" title="Entrenando">🥋</button>
           <button data-clip="${c.id}" title="Guardar otra técnica del mismo video">+ Recorte</button>
           <button class="r" data-edit="${c.id}">Editar</button>
           <button data-del="${c.id}" title="Borrar">🗑</button>
@@ -271,18 +285,25 @@ function init() {
      REPRODUCTOR (sirve para videos y para cuadritos de combos)
      ===================================================== */
   let onNoteSave = null;
-  function play({ yt, start, title, path, notes, label, save }) {
-    $('#plc').innerHTML = `<iframe src="https://www.youtube.com/embed/${yt}?start=${start || 0}&autoplay=1&rel=0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+  function play({ yt, ig, start, title, path, notes, label, save }) {
+    if (ig) {
+      $('#plc').innerHTML = `<iframe class="ig" src="https://www.instagram.com/p/${ig}/embed/" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen scrolling="no"></iframe>`;
+      $('#yt').href = `https://www.instagram.com/p/${ig}/`;
+      $('#yt').textContent = 'Abrir en Instagram ↗';
+    } else {
+      $('#plc').innerHTML = `<iframe src="https://www.youtube.com/embed/${yt}?start=${start || 0}&autoplay=1&rel=0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+      $('#yt').href = `https://www.youtube.com/watch?v=${yt}&t=${start || 0}s`;
+      $('#yt').textContent = 'Abrir en YouTube ↗';
+    }
     $('#plt').textContent = title || '';
-    $('#plp').textContent = (path || '') + (start ? ' · empieza en ' + fmtT(start) : '');
+    $('#plp').textContent = (path || '') + (start && !ig ? ' · empieza en ' + fmtT(start) : '');
     $('#plnl').textContent = label || 'Notas';
     $('#pln').value = notes || ''; $('#plsaved').textContent = '';
-    $('#yt').href = `https://www.youtube.com/watch?v=${yt}&t=${start || 0}s`;
     onNoteSave = save;
     $('#pl').showModal();
   }
   const playClip = c => play({
-    yt: c.yt, start: c.start, title: c.title || c.ytTitle, notes: c.notes,
+    yt: c.yt, ig: c.ig, start: c.start, title: c.title || c.ytTitle, notes: c.notes,
     path: [c.pos, c.act, c.tec].filter(Boolean).join(' → '),
     save: v => store.update(c.id, { notes: v }),
   });
@@ -313,7 +334,7 @@ function init() {
     editing = id || null;
     const c = data.clips.find(x => x.id === (id || from));
     $('#edt').textContent = id ? 'Editar video' : from ? 'Nuevo recorte del mismo video' : 'Agregar video';
-    $('#url').value = c ? `https://youtu.be/${c.yt}` : (url || '');
+    $('#url').value = c ? videoUrl(c) : (url || '');
     $('#title').value = id ? c.title || '' : '';
     $('#yttitle').textContent = c?.ytTitle ? 'En YouTube: ' + c.ytTitle : '';
     $('#yttitle').dataset.v = c?.ytTitle || '';
@@ -321,16 +342,26 @@ function init() {
     fillAct(id ? c.act : (c?.act || sel.act));
     $('#tec').value = id ? c.tec || '' : (from ? '' : sel.tec || '');
     $('#start').value = id ? fmtT(c.start) : (url ? fmtT(ytStart(url)) : '');
+    syncStart();
     $('#gi').value = c?.gi || flt.gi || 'gi';
     $('#fav').checked = id ? !!c.fav : false;
     $('#prac').checked = id ? !!c.prac : false;
+    $('#train').checked = id ? !!c.train : false;
     $('#notes').value = id ? c.notes || '' : '';
     $('#ed').showModal();
     if (url) fetchTitle();
     else if (!id && !from) $('#url').focus();
     else $('#title').focus();
   }
+  /* Instagram no permite elegir minuto: se desactiva el campo */
+  function syncStart() {
+    const ig = !!igId($('#url').value);
+    $('#start').disabled = ig;
+    if (ig) $('#start').value = '';
+    $('#start').placeholder = ig ? 'No disponible en Instagram' : 'Ej: 3:25';
+  }
   async function fetchTitle() {
+    syncStart();
     const id = ytId($('#url').value); if (!id) return;
     const t = ytStart($('#url').value); if (t && !$('#start').value) $('#start').value = fmtT(t);
     try {
@@ -344,14 +375,15 @@ function init() {
 
   $('#f').onsubmit = async e => {
     e.preventDefault();
-    const yt = ytId($('#url').value);
-    if (!yt) return alert('Ese link no parece de YouTube.');
+    const v = parseVideo($('#url').value, $('#start').value);
+    if (!v) return alert('Ese link no parece de YouTube ni de Instagram.');
     if (!$('#pos').value) return alert('Elegí o creá una posición (botón +).');
+    if (v.ig && !$('#title').value.trim()) return alert('Los videos de Instagram no traen título: escribí uno.');
     const d = {
-      yt, title: $('#title').value.trim(), ytTitle: $('#yttitle').dataset.v || '',
+      ...v, title: $('#title').value.trim(), ytTitle: v.yt ? ($('#yttitle').dataset.v || '') : '',
       pos: $('#pos').value, act: $('#act').value, tec: $('#tec').value.trim(),
-      start: parseT($('#start').value), gi: $('#gi').value,
-      fav: $('#fav').checked, prac: $('#prac').checked, notes: $('#notes').value.trim(),
+      gi: $('#gi').value,
+      fav: $('#fav').checked, prac: $('#prac').checked, train: $('#train').checked, notes: $('#notes').value.trim(),
     };
     $('#ed').close();
     try {
@@ -450,7 +482,7 @@ function init() {
         <div class="nm" title="${esc(n.name)}">${esc(n.name)}</div>
         <div class="nb">
           <button data-nd="desc" data-n="${n.id}" class="${n.desc ? '' : 'off'}" title="Descripción">📝</button>
-          ${n.yt ? `<button data-nd="play" data-n="${n.id}" title="Ver video">▶</button>` : ''}
+          ${hasVideo(n) ? `<button data-nd="play" data-n="${n.id}" title="Ver video">▶</button>` : ''}
           <button data-nd="edit" data-n="${n.id}" title="Editar">✎</button>
           <button data-nd="add" data-n="${n.id}" title="Agregar técnica que sigue">＋</button>
         </div></div>`;
@@ -472,7 +504,7 @@ function init() {
       $('#dd').showModal();
     }
     else if (b.dataset.nd === 'play') play({
-      yt: n.yt, start: n.start, title: n.name, path: c.name, notes: n.desc, label: 'Descripción',
+      yt: n.yt, ig: n.ig, start: n.start, title: n.name, path: c.name, notes: n.desc, label: 'Descripción',
       save: v => saveNode(n.id, { desc: v }),
     });
   };
@@ -498,17 +530,17 @@ function init() {
     $('#ndclip').innerHTML = '<option value="">— ninguno —</option>' + [...data.clips]
       .sort((a, b) => (a.title || a.ytTitle || '').localeCompare(b.title || b.ytTitle || ''))
       .map(c => `<option value="${c.id}">${esc(c.title || c.ytTitle || 'Sin título')}${c.tec ? ' · ' + esc(c.tec) : ''}</option>`).join('');
-    $('#ndurl').value = node?.yt ? `https://youtu.be/${node.yt}` : '';
+    $('#ndurl').value = node ? videoUrl(node) : '';
     $('#ndstart').value = node?.start ? fmtT(node.start) : '';
-    $('#ndvid').open = !!node?.yt;
+    $('#ndvid').open = !!node && hasVideo(node);
     $('#ndel').hidden = !node || root;
     $('#nd').showModal();
     (focusDesc ? $('#nddesc') : node ? $('#ndname') : ($('#ndvia').closest('[hidden]') ? $('#ndname') : $('#ndvia'))).focus();
   }
   $('#ndclip').onchange = () => {
     const c = data.clips.find(x => x.id === $('#ndclip').value); if (!c) return;
-    $('#ndurl').value = `https://youtu.be/${c.yt}`;
-    $('#ndstart').value = fmtT(c.start);
+    $('#ndurl').value = videoUrl(c);
+    $('#ndstart').value = c.ig ? '' : fmtT(c.start);
     if (!$('#ndname').value) $('#ndname').value = c.tec || c.title || c.ytTitle || '';
   };
   $('#ndurl').onchange = () => { const t = ytStart($('#ndurl').value); if (t && !$('#ndstart').value) $('#ndstart').value = fmtT(t); };
@@ -516,9 +548,9 @@ function init() {
   $('#nform').onsubmit = async e => {
     e.preventDefault();
     const name = $('#ndname').value.trim(); if (!name) return;
-    const url = $('#ndurl').value.trim(), yt = url ? ytId(url) : null;
-    if (url && !yt) return alert('Ese link no parece de YouTube.');
-    const d = { name, via: $('#ndvia').value.trim(), desc: $('#nddesc').value.trim(), yt: yt || null, start: yt ? parseT($('#ndstart').value) : 0 };
+    const url = $('#ndurl').value.trim(), v = url ? parseVideo(url, $('#ndstart').value) : { yt: null, ig: null, start: 0 };
+    if (!v) return alert('Ese link no parece de YouTube ni de Instagram.');
+    const d = { name, via: $('#ndvia').value.trim(), desc: $('#nddesc').value.trim(), ...v };
     const c = combo();
     let nodes;
     if (nodeCtx.node) nodes = c.nodes.map(n => n.id === nodeCtx.node.id ? { ...n, ...d } : n);
@@ -547,8 +579,8 @@ function init() {
     if (!txt) return;
     history.replaceState(null, '', location.pathname);
     const m = txt.match(/https?:\/\/\S+/g) || [];
-    const u = m.find(ytId);
-    if (u) openEd({ url: u }); else toast('No encontré un link de YouTube en lo compartido');
+    const u = m.find(x => ytId(x) || igId(x));
+    if (u) openEd({ url: u }); else toast('No encontré un link de YouTube o Instagram en lo compartido');
   }
 
   /* =====================================================

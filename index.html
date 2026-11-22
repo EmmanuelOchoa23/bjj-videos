@@ -59,6 +59,7 @@
         <button class="chip" data-f="gi" data-v="nogi">No-gi</button>
         <button class="chip" data-f="fav">⭐ Favoritos</button>
         <button class="chip" data-f="prac">🔁 Por practicar</button>
+        <button class="chip" data-f="train">🥋 Entrenando</button>
       </div>
     </div>
     <div class="list" id="grid"></div>
@@ -85,8 +86,8 @@
 <dialog id="ed">
   <form method="dialog" id="f">
     <h3 id="edt">Agregar video</h3>
-    <label for="url">Link de YouTube</label>
-    <input id="url" required inputmode="url" placeholder="https://youtu.be/...">
+    <label for="url">Link de YouTube o Instagram</label>
+    <input id="url" required inputmode="url" placeholder="https://youtu.be/... o https://instagram.com/reel/...">
     <label for="title">Tu título</label>
     <input id="title" placeholder="Ej: Triángulo desde guardia cerrada – detalle de la cadera">
     <div class="mut small" id="yttitle"></div>
@@ -107,6 +108,7 @@
     <div class="row checks">
       <label><input type="checkbox" id="fav"> ⭐ Favorito</label>
       <label><input type="checkbox" id="prac"> 🔁 Por practicar</label>
+      <label><input type="checkbox" id="train"> 🥋 Entrenando</label>
     </div>
     <label for="notes">Notas</label>
     <textarea id="notes" rows="3" placeholder="Detalles, errores comunes, tips…"></textarea>
@@ -144,7 +146,7 @@
       <summary>🎬 Video (opcional)</summary>
       <label for="ndclip">Elegir de mi biblioteca</label>
       <select id="ndclip"></select>
-      <label for="ndurl">…o pegar un link de YouTube</label>
+      <label for="ndurl">…o pegar un link de YouTube o Instagram</label>
       <input id="ndurl" inputmode="url" placeholder="https://youtu.be/...">
       <label for="ndstart">Empieza en (min:seg)</label>
       <input id="ndstart" placeholder="Ej: 1:30" inputmode="numeric">
