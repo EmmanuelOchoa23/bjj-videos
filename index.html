@@ -6,19 +6,24 @@
 <title>BJJ Second Brain</title>
 <meta name="apple-mobile-web-app-title" content="BJJ Second Brain">
 <meta name="application-name" content="BJJ Second Brain">
-<meta name="theme-color" content="#264C9E">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0e1014">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png?v=8">
-<link rel="apple-touch-icon" href="icon-192.png?v=8">
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="icon" href="icon-192.png?v=9">
+<link rel="apple-touch-icon" href="icon-192.png?v=9">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 
+<!-- ===== Login ===== -->
 <div id="login" class="center" hidden>
   <div class="loginbox">
-    <img src="icon-192.png" width="72" height="72" alt="">
-    <h1>BJJ Second Brain</h1>
-    <p>Tu biblioteca de técnicas, en la PC y en el celular.</p>
+    <div class="avatar sm"><img src="icon-512.png" alt=""></div>
+    <div class="kicker">Brazilian Jiu-Jitsu</div>
+    <h1 class="brand">Second Brain</h1>
     <button class="big gbtn" id="gbtn"><span class="g">G</span> Entrar con Google</button>
     <div class="or"><span>o con tu email</span></div>
     <form id="lform" class="lform">
@@ -37,17 +42,20 @@
 </div>
 
 <div id="app" hidden>
-<header>
+<header id="top">
   <button id="menu" class="icon" aria-label="Ver posiciones">☰</button>
-  <h1>🥋 BJJ Second Brain</h1>
-  <nav class="tabs">
-    <button data-view="videos" class="on">Videos</button>
-    <button data-view="combos">Combos</button>
+  <button id="brandbtn" class="brandbtn" data-go="home" aria-label="Inicio"><img src="icon-192.png" alt=""><span>Second Brain</span></button>
+  <h2 id="vtitle" class="vtitle"></h2>
+  <nav class="tabs" id="tabs">
+    <button data-go="home"><span class="ti">🏠</span><span class="tl">Inicio</span></button>
+    <button data-go="videos"><span class="ti">🥋</span><span class="tl">Técnicas</span></button>
+    <button data-go="combos"><span class="ti">🌳</span><span class="tl">Combos</span></button>
+    <button data-go="notas"><span class="ti">📓</span><span class="tl">Notas</span></button>
   </nav>
-  <input id="q" type="search" placeholder="Buscar título, técnica, nota…">
-  <button class="p" id="add">+ Agregar</button>
+  <span class="spacer"></span>
+  <button class="p" id="add">+ Técnica</button>
   <details class="more">
-    <summary class="btn">⋯</summary>
+    <summary class="btn" aria-label="Más opciones">⋯</summary>
     <div class="pop">
       <div id="who" class="mut"></div>
       <button id="exp">Descargar respaldo</button>
@@ -57,23 +65,52 @@
   </details>
   <input type="file" id="file" accept=".json" hidden>
 </header>
-<div id="localwarn" class="warn" hidden>Modo local: los videos se guardan solo en este navegador hasta que conectemos la nube.</div>
+<div id="localwarn" class="warn" hidden>Modo local: los datos se guardan solo en este navegador.</div>
 
-<!-- ===== Vista: videos ===== -->
-<div class="layout" id="vVideos">
+<!-- ===== Vista: inicio ===== -->
+<section id="vHome" class="home">
+  <div class="hero">
+    <div class="avatar"><img src="icon-512.png" alt="Mono con cinturón negro"></div>
+    <div class="kicker">Brazilian Jiu-Jitsu</div>
+    <h1 class="brand">Second Brain</h1>
+    <p class="tagline">Todo lo que aprendés en el tatami, en un solo lugar.</p>
+  </div>
+  <div id="hnext"></div>
+  <div class="hcards">
+    <button class="hcard" data-go="videos">
+      <span class="hic">🥋</span>
+      <span class="htx"><b>Técnicas</b><span id="hcTec" class="mut"></span></span>
+      <span class="harr">›</span>
+    </button>
+    <button class="hcard" data-go="combos">
+      <span class="hic">🌳</span>
+      <span class="htx"><b>Combos</b><span id="hcCom" class="mut"></span></span>
+      <span class="harr">›</span>
+    </button>
+    <button class="hcard" data-go="notas">
+      <span class="hic">📓</span>
+      <span class="htx"><b>Notas</b><span id="hcNot" class="mut"></span></span>
+      <span class="harr">›</span>
+    </button>
+  </div>
+</section>
+
+<!-- ===== Vista: técnicas ===== -->
+<div class="layout" id="vVideos" hidden>
   <aside id="side">
     <div id="tree"></div>
     <button id="newposside" class="ghost">+ Nueva posición</button>
   </aside>
   <main>
+    <input id="q" type="search" placeholder="Buscar técnica, posición, nota…">
     <div class="bar">
       <div id="crumb"></div>
       <div class="chips">
         <button class="chip" data-f="gi" data-v="gi">Gi</button>
         <button class="chip" data-f="gi" data-v="nogi">No-gi</button>
-        <button class="chip" data-f="fav">⭐ Favoritos</button>
-        <button class="chip" data-f="prac">🔁 Por practicar</button>
         <button class="chip" data-f="train">🥋 Entrenando</button>
+        <button class="chip" data-f="prac">🔁 Por practicar</button>
+        <button class="chip" data-f="fav">⭐ Favoritos</button>
       </div>
     </div>
     <div class="list" id="grid"></div>
@@ -81,25 +118,38 @@
 </div>
 
 <!-- ===== Vista: combos ===== -->
-<section id="vCombos" hidden>
+<section id="vCombos" class="page" hidden>
   <div id="clist" class="clist"></div>
   <div id="cdetail" hidden>
     <div class="ctool">
       <button id="cback">← Combos</button>
       <div class="ctitle"><b id="cname"></b><span class="mut small" id="cinfo"></span></div>
       <button id="cren">Renombrar</button>
-      <button id="cdel">🗑</button>
+      <button id="cdel" aria-label="Borrar combo">🗑</button>
     </div>
     <div class="mut small chint">Tocá <b>＋</b> en un cuadrito para agregar la técnica que sigue. <b>📝</b> descripción · <b>▶</b> video · <b>✎</b> editar.</div>
     <div id="diagram" class="diagram"></div>
   </div>
 </section>
+
+<!-- ===== Vista: notas ===== -->
+<section id="vNotas" class="page" hidden>
+  <div id="nlist"></div>
+</section>
+
+<!-- Barra inferior (celular) -->
+<nav class="bottomnav" id="bottomnav">
+  <button data-go="home"><span class="ti">🏠</span><span class="tl">Inicio</span></button>
+  <button data-go="videos"><span class="ti">🥋</span><span class="tl">Técnicas</span></button>
+  <button data-go="combos"><span class="ti">🌳</span><span class="tl">Combos</span></button>
+  <button data-go="notas"><span class="ti">📓</span><span class="tl">Notas</span></button>
+</nav>
 </div>
 
-<!-- Agregar / editar video -->
+<!-- Agregar / editar técnica -->
 <dialog id="ed">
   <form method="dialog" id="f">
-    <h3 id="edt">Agregar video</h3>
+    <h3 id="edt">Agregar técnica</h3>
     <label for="url">Link de YouTube o Instagram</label>
     <input id="url" required inputmode="url" placeholder="https://youtu.be/... o https://instagram.com/reel/...">
     <label for="title">Tu título</label>
@@ -120,9 +170,9 @@
         <select id="gi"><option value="gi">Gi</option><option value="nogi">No-gi</option><option value="ambos">Ambos</option></select></div>
     </div>
     <div class="row checks">
-      <label><input type="checkbox" id="fav"> ⭐ Favorito</label>
-      <label><input type="checkbox" id="prac"> 🔁 Por practicar</label>
       <label><input type="checkbox" id="train"> 🥋 Entrenando</label>
+      <label><input type="checkbox" id="prac"> 🔁 Por practicar</label>
+      <label><input type="checkbox" id="fav"> ⭐ Favorito</label>
     </div>
     <label for="notes">Notas</label>
     <textarea id="notes" rows="3" placeholder="Detalles, errores comunes, tips…"></textarea>
@@ -158,7 +208,7 @@
     <textarea id="nddesc" rows="5" placeholder="Cómo se hace, detalles, errores comunes…"></textarea>
     <details id="ndvid">
       <summary>🎬 Video (opcional)</summary>
-      <label for="ndclip">Elegir de mi biblioteca</label>
+      <label for="ndclip">Elegir de mis técnicas</label>
       <select id="ndclip"></select>
       <label for="ndurl">…o pegar un link de YouTube o Instagram</label>
       <input id="ndurl" inputmode="url" placeholder="https://youtu.be/...">
@@ -168,6 +218,27 @@
     <div class="foot">
       <button type="button" id="ndel" class="danger">Borrar</button>
       <button type="button" id="ndcx">Cancelar</button><button class="p">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Nota con fecha -->
+<dialog id="ntdlg">
+  <form method="dialog" id="ntform">
+    <h3 id="ntt">Nueva nota</h3>
+    <label for="ntdate">Fecha</label>
+    <input id="ntdate" type="date" required>
+    <div class="quick">
+      <button type="button" data-d="0">Hoy</button>
+      <button type="button" data-d="1">Mañana</button>
+      <button type="button" data-d="-1">Ayer</button>
+    </div>
+    <div id="ntkind" class="mut small"></div>
+    <label for="nttext">Nota</label>
+    <textarea id="nttext" rows="7" required placeholder="Qué entrenaste, qué salió, qué no… o qué querés practicar ese día."></textarea>
+    <div class="foot">
+      <button type="button" id="ntdel" class="danger">Borrar</button>
+      <button type="button" id="ntcx">Cancelar</button><button class="p">Guardar</button>
     </div>
   </form>
 </dialog>
@@ -194,6 +265,6 @@
 </dialog>
 
 <div id="toast"></div>
-<script type="module" src="app.js?v=8"></script>
+<script type="module" src="app.js?v=9"></script>
 </body>
 </html>

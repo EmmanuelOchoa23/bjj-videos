@@ -36,7 +36,7 @@ function localStore() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(K)); } catch (e) {}
   s = s || {};
-  s.clips ||= []; s.tax ||= []; s.combos ||= [];
+  s.clips ||= []; s.tax ||= []; s.combos ||= []; s.notes ||= [];
   let cb = () => {};
   const emit = () => { try { localStorage.setItem(K, JSON.stringify(s)); } catch (e) {} cb(structuredClone(s)); };
   return {
@@ -49,7 +49,10 @@ function localStore() {
     async cadd(d) { const id = crypto.randomUUID(); s.combos.push({ id, ...d }); emit(); return id; },
     async cupdate(id, p) { Object.assign(s.combos.find(x => x.id === id), p); emit(); },
     async cdel(id) { s.combos = s.combos.filter(x => x.id !== id); emit(); },
-    async importAll(j) { s = { clips: j.clips, tax: j.tax, combos: j.combos || [] }; emit(); },
+    async nadd(d) { s.notes.push({ id: crypto.randomUUID(), ...d }); emit(); },
+    async nupdate(id, p) { Object.assign(s.notes.find(x => x.id === id), p); emit(); },
+    async ndel(id) { s.notes = s.notes.filter(x => x.id !== id); emit(); },
+    async importAll(j) { s = { clips: j.clips, tax: j.tax, combos: j.combos || [], notes: j.notes || [] }; emit(); },
   };
 }
 
@@ -101,14 +104,16 @@ async function firebaseStore() {
   const base = `users/${user.uid}`;
   const clipsCol = F.collection(db, base, 'clips');
   const combosCol = F.collection(db, base, 'combos');
+  const notesCol = F.collection(db, base, 'notes');
   const taxDoc = F.doc(db, base, 'meta', 'tax');
-  const st = { clips: [], tax: [], combos: [] };
+  const st = { clips: [], tax: [], combos: [], notes: [] };
   return {
     mode: 'cloud', user: { name: user.displayName || user.email, email: user.email }, login,
     logout: () => A.signOut(auth).then(() => location.reload()),
     start(cb) {
       F.onSnapshot(clipsCol, q => { st.clips = q.docs.map(d => ({ id: d.id, ...d.data() })); cb({ ...st }); });
       F.onSnapshot(combosCol, q => { st.combos = q.docs.map(d => ({ id: d.id, ...d.data() })); cb({ ...st }); });
+      F.onSnapshot(notesCol, q => { st.notes = q.docs.map(d => ({ id: d.id, ...d.data() })); cb({ ...st }); });
       F.onSnapshot(taxDoc, d => { st.tax = d.exists() ? (d.data().positions || []) : []; cb({ ...st }); });
     },
     add: d => F.addDoc(clipsCol, d),
@@ -118,9 +123,12 @@ async function firebaseStore() {
     cadd: d => F.addDoc(combosCol, d).then(r => r.id),
     cupdate: (id, p) => F.updateDoc(F.doc(combosCol, id), p),
     cdel: id => F.deleteDoc(F.doc(combosCol, id)),
+    nadd: d => F.addDoc(notesCol, d),
+    nupdate: (id, p) => F.updateDoc(F.doc(notesCol, id), p),
+    ndel: id => F.deleteDoc(F.doc(notesCol, id)),
     async importAll(j) {
       await F.setDoc(taxDoc, { positions: j.tax });
-      const all = [...j.clips.map(c => [clipsCol, c]), ...(j.combos || []).map(c => [combosCol, c])];
+      const all = [...j.clips.map(c => [clipsCol, c]), ...(j.combos || []).map(c => [combosCol, c]), ...(j.notes || []).map(c => [notesCol, c])];
       for (let i = 0; i < all.length; i += 400) {
         const b = F.writeBatch(db);
         for (const [col, c] of all.slice(i, i + 400)) { const { id, ...d } = c; b.set(F.doc(col, id || crypto.randomUUID()), d); }
@@ -174,40 +182,77 @@ if (!store.user) {
   $('#localwarn').hidden = store.mode !== 'local';
   $('#who').textContent = store.user.email || store.user.name;
   if (store.logout) { $('#out').hidden = false; $('#out').onclick = store.logout; }
-  if ('serviceWorker' in navigator && location.protocol === 'https:') {
-    // Busca una versión nueva cada vez que se abre la app; si la hay, recarga una vez.
-    const hadSW = !!navigator.serviceWorker.controller;
-    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {});
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (hadSW && !sessionStorage.getItem('bjj-reloaded')) { sessionStorage.setItem('bjj-reloaded', '1'); location.reload(); }
-    });
-  }
   init();
 }
 
+// Se registra siempre (también en la pantalla de login) para que la app se pueda instalar enseguida.
+// Busca una versión nueva cada vez que se abre la app; si la hay, recarga una vez.
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  const hadSW = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {});
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadSW && !sessionStorage.getItem('bjj-reloaded')) { sessionStorage.setItem('bjj-reloaded', '1'); location.reload(); }
+  });
+}
+
 function init() {
-  let data = { clips: [], tax: [], combos: [] };
+  let data = { clips: [], tax: [], combos: [], notes: [] };
   let sel = { pos: null, act: null, tec: null };
   const flt = { gi: null, fav: false, prac: false, train: false };
   const opened = new Set();
-  let view = 'videos', comboId = null;
+  let view = 'home', comboId = null;
   let editing = null, first = true;
 
   /* =====================================================
-     VISTAS (Videos / Combos)
+     VISTAS (Inicio / Técnicas / Combos / Notas)
      ===================================================== */
-  function setView(v) {
+  const VIEWS = {
+    home:   { el: '#vHome',   title: 'Inicio',   add: null },
+    videos: { el: '#vVideos', title: 'Técnicas', add: '+ Técnica' },
+    combos: { el: '#vCombos', title: 'Combos',   add: '+ Combo' },
+    notas:  { el: '#vNotas',  title: 'Notas',    add: '+ Nota' },
+  };
+  function setView(v, push = true) {
+    if (!VIEWS[v]) v = 'home';
     view = v;
-    document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
-    $('#vVideos').hidden = v !== 'videos';
-    $('#vCombos').hidden = v !== 'combos';
-    $('#q').hidden = v !== 'videos';
-    $('#menu').style.visibility = v === 'videos' ? '' : 'hidden';
-    $('#add').textContent = v === 'videos' ? '+ Agregar' : '+ Combo';
+    for (const [k, o] of Object.entries(VIEWS)) $(o.el).hidden = k !== v;
+    document.querySelectorAll('[data-go]').forEach(b => b.classList.toggle('on', b.dataset.go === v));
+    document.body.className = document.body.className.replace(/\bv-\w+/g, '').trim() + ' v-' + v;
+    $('#vtitle').textContent = VIEWS[v].title;
+    $('#add').hidden = !VIEWS[v].add;
+    $('#add').textContent = VIEWS[v].add || '';
+    if (push && location.hash !== '#' + v) history.pushState(null, '', v === 'home' ? location.pathname : '#' + v);
     if (v === 'combos') renderCombos();
+    if (v === 'notas') renderNotes();
+    if (v === 'home') renderHome();
+    window.scrollTo(0, 0);
   }
-  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => setView(b.dataset.view));
-  $('#add').onclick = () => view === 'videos' ? openEd() : openComboDlg();
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-go]'); if (!b) return;
+    if (b.dataset.go === 'combos') comboId = null;
+    setView(b.dataset.go);
+  });
+  // Botón "atrás" del celular: vuelve entre secciones en vez de salir de la app
+  window.addEventListener('popstate', () => setView(location.hash.slice(1) || 'home', false));
+  $('#add').onclick = () => view === 'videos' ? openEd() : view === 'combos' ? openComboDlg() : view === 'notas' ? openNote() : null;
+
+  /* =====================================================
+     INICIO
+     ===================================================== */
+  const plural = (n, s, p) => `${n} ${n === 1 ? s : p}`;
+  function renderHome() {
+    const tr = data.clips.filter(c => c.train).length;
+    $('#hcTec').textContent = plural(data.clips.length, 'técnica guardada', 'técnicas guardadas') + (tr ? ` · ${tr} entrenando` : '');
+    $('#hcCom').textContent = data.combos.length ? plural(data.combos.length, 'combo', 'combos') : 'Armá cadenas de técnicas en árbol';
+    const up = upcoming();
+    $('#hcNot').textContent = data.notes.length ? plural(data.notes.length, 'nota', 'notas') + (up.length ? ` · ${plural(up.length, 'recordatorio', 'recordatorios')}` : '') : 'Diario de entrenamiento y recordatorios';
+    const nx = up[0];
+    $('#hnext').innerHTML = nx ? `<button class="nextcard" data-hn="${nx.id}">
+        <span class="dt"><b>${dayNum(nx.date)}</b><span>${monShort(nx.date)}</span></span>
+        <span class="nx"><span class="lbl">${nx.date === today() ? 'Hoy' : 'Próximo · ' + esc(weekday(nx.date))}</span><span class="tx">${esc(nx.text)}</span></span>
+      </button>` : '';
+  }
+  $('#hnext').onclick = e => { const b = e.target.closest('[data-hn]'); if (b) openNote(data.notes.find(n => n.id === b.dataset.hn)); };
 
   /* =====================================================
      ÁRBOL LATERAL (posición → acción → técnica)
@@ -315,15 +360,17 @@ function init() {
   function render() {
     renderTree();
     document.querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.f === 'gi' ? flt.gi === b.dataset.v : flt[b.dataset.f]));
-    $('#crumb').textContent = [sel.pos || 'Todos los videos', sel.act, sel.tec].filter(Boolean).join(' → ');
+    $('#crumb').textContent = [sel.pos || 'Todas las técnicas', sel.act, sel.tec].filter(Boolean).join(' → ');
     if (view === 'combos') renderCombos();
+    if (view === 'notas') renderNotes();
+    if (view === 'home') renderHome();
     const ae = document.activeElement;
     if (ae && ae.dataset && ae.dataset.note) return; // no pisar lo que estás escribiendo
     // Orden: 🥋 Entrenando → 🔁 Por practicar → ⭐ Favoritos → el resto; dentro de cada grupo, los más nuevos primero
     const rank = c => c.train ? 0 : c.prac ? 1 : c.fav ? 2 : 3;
     const vs = data.clips.filter(visible).sort((a, b) => rank(a) - rank(b) || (b.added || 0) - (a.added || 0));
     $('#grid').innerHTML = vs.length ? vs.map(itemHTML).join('')
-      : `<div class="empty">${data.clips.length ? 'Nada coincide con esta búsqueda o filtro.' : 'Todavía no hay videos. Tocá “+ Agregar” o compartí un video desde YouTube.'}</div>`;
+      : `<div class="empty">${data.clips.length ? 'Nada coincide con esta búsqueda o filtro.' : 'Todavía no hay técnicas. Tocá “+ Técnica” o compartí un video desde YouTube o Instagram.'}</div>`;
   }
 
   $('#grid').onclick = async e => {
@@ -395,7 +442,7 @@ function init() {
   function openEd({ id, from, url } = {}) {
     editing = id || null;
     const c = data.clips.find(x => x.id === (id || from));
-    $('#edt').textContent = id ? 'Editar video' : from ? 'Nuevo recorte del mismo video' : 'Agregar video';
+    $('#edt').textContent = id ? 'Editar técnica' : from ? 'Nuevo recorte del mismo video' : 'Agregar técnica';
     $('#url').value = c ? videoUrl(c) : (url || '');
     $('#title').value = id ? c.title || '' : '';
     $('#yttitle').textContent = c?.ytTitle ? 'En YouTube: ' + c.ytTitle : '';
@@ -642,15 +689,90 @@ function init() {
     history.replaceState(null, '', location.pathname);
     const m = txt.match(/https?:\/\/\S+/g) || [];
     const u = m.find(x => ytId(x) || igId(x));
+    setView('videos');
     if (u) openEd({ url: u }); else toast('No encontré un link de YouTube o Instagram en lo compartido');
   }
+
+  /* =====================================================
+     NOTAS CON FECHA (diario de entrenamiento + recordatorios)
+     ===================================================== */
+  const pad = n => String(n).padStart(2, '0');
+  const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const today = () => ymd(new Date());
+  const shift = k => { const d = new Date(); d.setDate(d.getDate() + k); return ymd(d); };
+  const toDate = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const dayNum = s => toDate(s).getDate();
+  const monShort = s => toDate(s).toLocaleDateString('es', { month: 'short' }).replace('.', '');
+  const weekday = s => toDate(s).toLocaleDateString('es', { weekday: 'long' });
+  const longDate = s => toDate(s).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: toDate(s).getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
+  const upcoming = () => data.notes.filter(n => n.date >= today()).sort((a, b) => a.date.localeCompare(b.date) || (a.added || 0) - (b.added || 0));
+  const relDay = s => { const diff = Math.round((toDate(s) - toDate(today())) / 864e5); return diff === 0 ? 'Hoy' : diff === 1 ? 'Mañana' : diff === -1 ? 'Ayer' : diff > 1 ? `En ${diff} días` : ''; };
+
+  function noteHTML(n) {
+    const t = today(), cls = n.date === t ? 'today' : n.date > t ? 'future' : '';
+    const tag = n.date === t ? 'Hoy' : n.date > t ? 'Recordatorio' : '';
+    return `<button class="note ${cls}" data-nid="${n.id}">
+      <span class="dt"><b>${dayNum(n.date)}</b><span>${monShort(n.date)}</span></span>
+      <span class="nx"><span class="wd">${esc(longDate(n.date))}${tag ? `<span class="tag">${tag}</span>` : ''}${relDay(n.date) && !tag.startsWith('Hoy') ? ` · ${relDay(n.date)}` : ''}</span>
+      <span class="tx">${esc(n.text)}</span></span></button>`;
+  }
+  function renderNotes() {
+    const t = today();
+    const fut = upcoming();
+    const past = data.notes.filter(n => n.date < t).sort((a, b) => b.date.localeCompare(a.date) || (b.added || 0) - (a.added || 0));
+    if (!data.notes.length) {
+      $('#nlist').innerHTML = `<div class="empty">Todavía no hay notas.<br><br>Después de entrenar, anotá qué hiciste.<br>O dejate un recordatorio para el próximo entrenamiento.<br><br><button class="p" id="nfirst">+ Nueva nota</button></div>`;
+      $('#nfirst').onclick = () => openNote();
+      return;
+    }
+    $('#nlist').innerHTML =
+      (fut.length ? `<div class="nsec"><h3>Próximos entrenamientos</h3>${fut.map(noteHTML).join('')}</div>` : '') +
+      (past.length ? `<div class="nsec"><h3>Diario de entrenamiento</h3>${past.map(noteHTML).join('')}</div>` : '');
+  }
+  $('#nlist').addEventListener('click', e => { const b = e.target.closest('[data-nid]'); if (b) openNote(data.notes.find(n => n.id === b.dataset.nid)); });
+
+  let noteEditing = null;
+  function noteKind() {
+    const d = $('#ntdate').value, t = today();
+    $('#ntkind').textContent = !d ? '' : d > t ? '📅 Recordatorio para un entrenamiento futuro' : d === t ? '🥋 Nota de hoy' : '📓 Nota de un entrenamiento pasado';
+  }
+  function openNote(n) {
+    noteEditing = n || null;
+    $('#ntt').textContent = n ? 'Editar nota' : 'Nueva nota';
+    $('#ntdate').value = n ? n.date : today();
+    $('#nttext').value = n ? n.text : '';
+    $('#ntdel').hidden = !n;
+    noteKind();
+    $('#ntdlg').showModal();
+    if (!n) $('#nttext').focus();
+  }
+  $('#ntdate').oninput = noteKind;
+  document.querySelectorAll('.quick [data-d]').forEach(b => b.onclick = () => { $('#ntdate').value = shift(+b.dataset.d); noteKind(); });
+  $('#ntcx').onclick = () => $('#ntdlg').close();
+  $('#ntform').onsubmit = async e => {
+    e.preventDefault();
+    const d = { date: $('#ntdate').value, text: $('#nttext').value.trim() };
+    if (!d.date || !d.text) return;
+    $('#ntdlg').close();
+    try {
+      if (noteEditing) await store.nupdate(noteEditing.id, d);
+      else await store.nadd({ ...d, added: Date.now() });
+      toast('Nota guardada');
+    } catch (err) { alert('No se pudo guardar: ' + err.message); }
+  };
+  $('#ntdel').onclick = async () => {
+    if (!confirm('¿Borrar esta nota?')) return;
+    $('#ntdlg').close();
+    await store.ndel(noteEditing.id);
+    toast('Nota borrada');
+  };
 
   /* =====================================================
      RESPALDO
      ===================================================== */
   $('#exp').onclick = () => {
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify({ clips: data.clips, tax: data.tax, combos: data.combos }, null, 1)], { type: 'application/json' }));
+    a.href = URL.createObjectURL(new Blob([JSON.stringify({ clips: data.clips, tax: data.tax, combos: data.combos, notes: data.notes }, null, 1)], { type: 'application/json' }));
     a.download = 'bjj-respaldo-' + new Date().toISOString().slice(0, 10) + '.json';
     a.click();
   };
@@ -659,14 +781,15 @@ function init() {
     try {
       const j = JSON.parse(await e.target.files[0].text());
       if (!Array.isArray(j.clips) || !Array.isArray(j.tax)) throw 0;
-      if (confirm(`¿Cargar ${j.clips.length} videos y ${(j.combos || []).length} combos del respaldo?`)) { await store.importAll(j); toast('Respaldo cargado'); }
+      if (confirm(`¿Cargar ${j.clips.length} técnicas, ${(j.combos || []).length} combos y ${(j.notes || []).length} notas del respaldo?`)) { await store.importAll(j); toast('Respaldo cargado'); }
     } catch (_) { alert('Ese archivo no es un respaldo válido.'); }
     e.target.value = '';
   };
 
   /* ----- conectar datos (al final, cuando todo está definido) ----- */
   store.start(d => {
-    data = { clips: [], tax: [], combos: [], ...d };
+    data = { clips: [], tax: [], combos: [], notes: [], ...d };
+    if (first) { setView(location.hash.slice(1) || 'home', false); }
     render();
     if (first) { first = false; handleShare(); }
   });

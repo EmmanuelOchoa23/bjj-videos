@@ -46,5 +46,7 @@ Después, en Firebase → Authentication → **Configuración → Dominios autor
 - **Notas**: se editan directo debajo de cada video o mientras lo mirás.
 - **🥋 / 🔁 / ⭐**: entrenando, por practicar y favorito. La lista se ordena en ese orden. Filtros arriba: Gi, No-gi, ⭐, 🔁, 🥋.
 - **Combos**: árbol desde una posición; cada cuadrito tiene 📝 descripción, ▶ video (YouTube o Instagram), ✎ editar y ＋ técnica siguiente.
+- **Inicio**: pantalla principal con tu próximo recordatorio y accesos a Técnicas, Combos y Notas.
+- **Notas**: con fecha. Las de días pasados son tu diario de entrenamiento; las de días futuros, recordatorios.
 - **Login**: con Google o con email y contraseña. Cada usuario tiene su propia biblioteca.
 - **⋯ → Descargar respaldo**: guarda una copia de todo en un archivo.
