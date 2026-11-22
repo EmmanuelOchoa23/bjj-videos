@@ -1,6 +1,6 @@
 // Guarda la app para que abra sin conexión, pero SIEMPRE pide la versión nueva primero
 // (cache: 'no-cache' evita que el navegador use una copia vieja de hasta 10 minutos).
-const C = 'bjj-videos-v11';
+const C = 'bjj-videos-v12';
 const SHELL = ['./', 'index.html', 'app.js', 'i18n.js', 'style.css', 'config.js', 'manifest.json', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
 
 self.addEventListener('install', e => {

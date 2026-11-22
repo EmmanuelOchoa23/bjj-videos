@@ -112,6 +112,14 @@ const EN = {
   'Todavía no hay notas.': 'No notes yet.', 'Después de entrenar, anotá qué hiciste.': 'After training, write down what you did.',
   'O dejate un recordatorio para el próximo entrenamiento.': 'Or leave yourself a reminder for the next session.',
   '+ Nueva nota': '+ New note', '¿Borrar esta nota?': 'Delete this note?', 'Nota borrada': 'Note deleted',
+  'Tipo de nota': 'Note type', 'Entrenado': 'Trained', 'Próximo entrenamiento': 'Next session', 'Nota fija': 'Pinned note',
+  'Notas fijas': 'Pinned notes', 'Fija': 'Pinned',
+  '🥋 Lo que entrenaste ese día.': '🥋 What you trained that day.',
+  '📅 Un recordatorio para un entrenamiento que viene. Elegí el día.': '📅 A reminder for an upcoming session. Pick the day.',
+  '📌 Siempre visible, sin fecha. Ideal para cosas que querés tener presentes.': '📌 Always visible, no date. Great for things you want to keep in mind.',
+  'Qué entrenaste, qué salió, qué no…': 'What you trained, what worked, what didn’t…',
+  'Qué querés practicar ese día…': 'What you want to practice that day…',
+  'Ej: Siempre cerrar las rodillas en el triángulo.': 'E.g. Always squeeze the knees in the triangle.',
 
   // --- Respaldo ---
   '¿Cargar {a} técnicas, {b} combos y {c} notas del respaldo?': 'Load {a} techniques, {b} combos and {c} notes from the backup?',

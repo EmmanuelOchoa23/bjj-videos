@@ -9,12 +9,12 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0e1014">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png?v=11">
-<link rel="apple-touch-icon" href="icon-192.png?v=11">
+<link rel="icon" href="icon-192.png?v=12">
+<link rel="apple-touch-icon" href="icon-192.png?v=12">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 
@@ -233,12 +233,15 @@
 <dialog id="ntdlg">
   <form method="dialog" id="ntform">
     <h3 id="ntt">Nueva nota</h3>
-    <label for="ntdate">Fecha</label>
-    <input id="ntdate" type="date" required>
-    <div class="quick">
-      <button type="button" data-d="0">Hoy</button>
-      <button type="button" data-d="1">Mañana</button>
-      <button type="button" data-d="-1">Ayer</button>
+    <label>Tipo de nota</label>
+    <div class="kinds" id="ntkinds">
+      <button type="button" data-k="done"><span class="ki">🥋</span><span>Entrenado</span></button>
+      <button type="button" data-k="next"><span class="ki">📅</span><span>Próximo entrenamiento</span></button>
+      <button type="button" data-k="pinned"><span class="ki">📌</span><span>Nota fija</span></button>
+    </div>
+    <div id="ntdatew">
+      <label for="ntdate">Fecha</label>
+      <input id="ntdate" type="date">
     </div>
     <div id="ntkind" class="mut small"></div>
     <label for="nttext">Nota</label>
@@ -272,6 +275,6 @@
 </dialog>
 
 <div id="toast"></div>
-<script type="module" src="app.js?v=11"></script>
+<script type="module" src="app.js?v=12"></script>
 </body>
 </html>

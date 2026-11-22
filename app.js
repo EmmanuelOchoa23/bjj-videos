@@ -767,12 +767,19 @@ function init() {
   const monShort = s => toDate(s).toLocaleDateString(locale, { month: 'short' }).replace('.', '');
   const weekday = s => toDate(s).toLocaleDateString(locale, { weekday: 'long' });
   const longDate = s => toDate(s).toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: toDate(s).getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
-  const upcoming = () => data.notes.filter(n => n.date >= today()).sort((a, b) => a.date.localeCompare(b.date) || (a.added || 0) - (b.added || 0));
+  /* Tipo de nota: 'done' (entrenado), 'next' (próximo entrenamiento) o 'pinned' (fija, sin fecha).
+     Las notas viejas sin tipo se acomodan por su fecha. */
+  const kindOf = n => n.kind || (n.date > today() ? 'next' : 'done');
+  const upcoming = () => data.notes.filter(n => kindOf(n) === 'next' && n.date >= today()).sort((a, b) => a.date.localeCompare(b.date) || (a.added || 0) - (b.added || 0));
   const relDay = s => { const diff = Math.round((toDate(s) - toDate(today())) / 864e5); return diff === 0 ? t('Hoy') : diff === 1 ? t('Mañana') : diff === -1 ? t('Ayer') : diff > 1 ? t('En {n} días', { n: diff }) : ''; };
 
   function noteHTML(n) {
-    const td = today(), cls = n.date === td ? 'today' : n.date > td ? 'future' : '';
-    const tag = n.date === td ? t('Hoy') : n.date > td ? t('Recordatorio') : '';
+    if (kindOf(n) === 'pinned') return `<button class="note pinned" data-nid="${n.id}">
+      <span class="dt"><b>📌</b><span>${t('Fija')}</span></span>
+      <span class="nx"><span class="tx">${esc(n.text)}</span></span></button>`;
+    const td = today(), nxt = kindOf(n) === 'next';
+    const cls = n.date === td ? 'today' : nxt && n.date > td ? 'future' : '';
+    const tag = n.date === td ? t('Hoy') : nxt && n.date > td ? t('Próximo entrenamiento') : '';
     return `<button class="note ${cls}" data-nid="${n.id}">
       <span class="dt"><b>${dayNum(n.date)}</b><span>${monShort(n.date)}</span></span>
       <span class="nx"><span class="wd">${esc(longDate(n.date))}${tag ? `<span class="tag">${tag}</span>` : ''}${relDay(n.date) && n.date !== td ? ` · ${relDay(n.date)}` : ''}</span>
@@ -781,7 +788,10 @@ function init() {
   function renderNotes() {
     const td = today();
     const fut = upcoming();
-    const past = data.notes.filter(n => n.date < td).sort((a, b) => b.date.localeCompare(a.date) || (b.added || 0) - (a.added || 0));
+    const pinned = data.notes.filter(n => kindOf(n) === 'pinned').sort((a, b) => (b.added || 0) - (a.added || 0));
+    // Diario: lo entrenado + los "próximos" cuya fecha ya pasó
+    const past = data.notes.filter(n => kindOf(n) === 'done' || (kindOf(n) === 'next' && n.date < td))
+      .sort((a, b) => b.date.localeCompare(a.date) || (b.added || 0) - (a.added || 0));
     if (!data.notes.length) {
       $('#nlist').innerHTML = `<div class="empty">${t('Todavía no hay notas.')}<br><br>${t('Después de entrenar, anotá qué hiciste.')}<br>${t('O dejate un recordatorio para el próximo entrenamiento.')}<br><br><button class="p" id="nfirst">${t('+ Nueva nota')}</button></div>`;
       $('#nfirst').onclick = () => openNote();
@@ -789,32 +799,47 @@ function init() {
     }
     $('#nlist').innerHTML =
       (fut.length ? `<div class="nsec"><h3>${t('Próximos entrenamientos')}</h3>${fut.map(noteHTML).join('')}</div>` : '') +
+      (pinned.length ? `<div class="nsec"><h3>${t('Notas fijas')}</h3>${pinned.map(noteHTML).join('')}</div>` : '') +
       (past.length ? `<div class="nsec"><h3>${t('Diario de entrenamiento')}</h3>${past.map(noteHTML).join('')}</div>` : '');
   }
   $('#nlist').addEventListener('click', e => { const b = e.target.closest('[data-nid]'); if (b) openNote(data.notes.find(n => n.id === b.dataset.nid)); });
 
-  let noteEditing = null;
-  function noteKind() {
-    const d = $('#ntdate').value, td = today();
-    $('#ntkind').textContent = !d ? '' : t(d > td ? '📅 Recordatorio para un entrenamiento futuro' : d === td ? '🥋 Nota de hoy' : '📓 Nota de un entrenamiento pasado');
+  let noteEditing = null, ntKind = 'done';
+  const KIND_HINT = {
+    done: '🥋 Lo que entrenaste ese día.',
+    next: '📅 Un recordatorio para un entrenamiento que viene. Elegí el día.',
+    pinned: '📌 Siempre visible, sin fecha. Ideal para cosas que querés tener presentes.',
+  };
+  const KIND_PH = {
+    done: 'Qué entrenaste, qué salió, qué no…',
+    next: 'Qué querés practicar ese día…',
+    pinned: 'Ej: Siempre cerrar las rodillas en el triángulo.',
+  };
+  function setKind(k) {
+    ntKind = k;
+    document.querySelectorAll('#ntkinds [data-k]').forEach(b => b.classList.toggle('on', b.dataset.k === k));
+    $('#ntdatew').hidden = k === 'pinned';
+    $('#ntdate').required = k !== 'pinned';
+    if (k !== 'pinned' && !$('#ntdate').value) $('#ntdate').value = today();
+    $('#ntkind').textContent = t(KIND_HINT[k]);
+    $('#nttext').placeholder = t(KIND_PH[k]);
   }
   function openNote(n) {
     noteEditing = n || null;
     $('#ntt').textContent = t(n ? 'Editar nota' : 'Nueva nota');
-    $('#ntdate').value = n ? n.date : today();
+    $('#ntdate').value = n && n.date ? n.date : today();
     $('#nttext').value = n ? n.text : '';
     $('#ntdel').hidden = !n;
-    noteKind();
+    setKind(n ? kindOf(n) : 'done');
     $('#ntdlg').showModal();
     if (!n) $('#nttext').focus();
   }
-  $('#ntdate').oninput = noteKind;
-  document.querySelectorAll('.quick [data-d]').forEach(b => b.onclick = () => { $('#ntdate').value = shift(+b.dataset.d); noteKind(); });
+  document.querySelectorAll('#ntkinds [data-k]').forEach(b => b.onclick = () => setKind(b.dataset.k));
   $('#ntcx').onclick = () => $('#ntdlg').close();
   $('#ntform').onsubmit = async e => {
     e.preventDefault();
-    const d = { date: $('#ntdate').value, text: $('#nttext').value.trim() };
-    if (!d.date || !d.text) return;
+    const d = { kind: ntKind, date: ntKind === 'pinned' ? '' : $('#ntdate').value, text: $('#nttext').value.trim() };
+    if (!d.text || (ntKind !== 'pinned' && !d.date)) return;
     $('#ntdlg').close();
     try {
       if (noteEditing) await store.nupdate(noteEditing.id, d);

@@ -185,8 +185,16 @@ main{flex:1;min-width:0}
 .note .wd .tag{display:inline-block;margin-left:6px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;padding:1px 6px;border-radius:99px;background:var(--acbg);color:var(--ac)}
 .note.today .wd .tag{background:#3a3214;color:var(--gold)}
 .note .tx{white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.quick{display:flex;gap:6px;margin-top:6px}
-.quick button{padding:4px 10px;font-size:13px;border-radius:99px;background:var(--bg2)}
+.note.pinned{border-color:#5a4a1e;background:linear-gradient(180deg,#2a2414,var(--card))}
+.note.pinned .dt b{font-family:inherit;font-size:24px;line-height:1.2}
+.note.pinned .dt span{color:var(--gold)}
+/* Selector de tipo de nota */
+.kinds{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.kinds button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 6px;border-radius:12px;background:var(--bg2);color:var(--mut);font-size:13px;font-weight:600;line-height:1.2;text-align:center;min-height:70px}
+.kinds .ki{font-size:20px;filter:grayscale(1);opacity:.6}
+.kinds button.on{background:var(--acbg);border-color:var(--ac);color:var(--tx)}
+.kinds button.on .ki{filter:none;opacity:1}
+#ntkind{margin-top:8px}
 
 /* ===== Diálogos ===== */
 dialog{border:1px solid var(--bd);border-radius:16px;background:var(--card);color:var(--tx);padding:20px;width:min(540px,94vw);max-height:92vh;box-shadow:0 20px 80px #000c}
