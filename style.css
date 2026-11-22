@@ -1,11 +1,12 @@
-:root{--bg:#f6f6f4;--card:#fff;--tx:#1a1a1a;--mut:#6b6b6b;--bd:#e2e2de;--ac:#1f4fd8;--acbg:#e8eefc;--warn:#fff4d6;--warntx:#6b4e00}
-@media(prefers-color-scheme:dark){:root{--bg:#141414;--card:#1f1f1f;--tx:#eee;--mut:#9a9a9a;--bd:#333;--ac:#7aa2ff;--acbg:#23304f;--warn:#3a2f10;--warntx:#f0d27a}}
+:root{--bg:#f6f6f4;--card:#fff;--tx:#1a1a1a;--mut:#6b6b6b;--bd:#e2e2de;--ac:#1f4fd8;--acbg:#e8eefc;--warn:#fff4d6;--warntx:#6b4e00;--line:#b9b9b2;--root:#1f4fd8;--rootx:#fff}
+@media(prefers-color-scheme:dark){:root{--bg:#141414;--card:#1f1f1f;--tx:#eee;--mut:#9a9a9a;--bd:#333;--ac:#7aa2ff;--acbg:#23304f;--warn:#3a2f10;--warntx:#f0d27a;--line:#555;--root:#2c4fa8;--rootx:#fff}}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;font:15px/1.4 system-ui,sans-serif;background:var(--bg);color:var(--tx)}
 input,select,textarea,button,.btn{font:inherit;color:inherit;background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:8px 10px}
 button,.btn{cursor:pointer}button:hover,.btn:hover{border-color:var(--ac)}
 button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+button.danger{color:#d33;margin-right:auto}
 button.big{padding:12px 20px;font-size:16px}
 button.ghost{background:none;border-style:dashed;width:100%;margin-top:6px;color:var(--mut)}
 .mut{color:var(--mut)}.small{font-size:13px}.err{color:#d33}
@@ -16,10 +17,14 @@ header{display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1
 header h1{font-size:18px;margin:0;white-space:nowrap}
 #q{flex:1;min-width:0}
 .icon{display:none}
+.tabs{display:flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden;flex-shrink:0}
+.tabs button{border:0;border-radius:0;padding:7px 12px;background:var(--card)}
+.tabs button.on{background:var(--ac);color:#fff}
 .more{position:relative}.more summary{list-style:none}.more summary::-webkit-details-marker{display:none}
 .pop{position:absolute;right:0;top:44px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;min-width:200px;box-shadow:0 6px 20px #0003}
 .pop .mut{font-size:13px;padding:2px 4px;word-break:break-all}
 .warn{background:var(--warn);color:var(--warntx);padding:8px 16px;font-size:13px}
+body.combos .spacer{flex:1}
 
 .layout{display:flex;gap:16px;padding:16px;align-items:flex-start}
 aside{width:270px;flex-shrink:0;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px;position:sticky;top:70px;max-height:calc(100vh - 90px);overflow:auto}
@@ -36,28 +41,59 @@ main{flex:1;min-width:0}
 .chip{border-radius:99px;padding:4px 12px;font-size:13px}
 .chip.on{background:var(--acbg);color:var(--ac);border-color:var(--ac)}
 
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
-.th{position:relative;aspect-ratio:16/9;background:#000;cursor:pointer;border:0;padding:0;border-radius:0;width:100%}
+/* ----- lista compacta de videos ----- */
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:8px;align-items:start}
+.item{background:var(--card);border:1px solid var(--bd);border-radius:10px;overflow:hidden}
+.item.open{border-color:var(--ac)}
+.head{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;border-radius:0;background:none;padding:10px 12px}
+.head .hx{flex:1;min-width:0}
+.head .tt{display:block;font-weight:600;line-height:1.3}
+.head .path{display:block;color:var(--mut);font-size:13px;margin-top:2px}
+.head .mk{font-size:13px;white-space:nowrap}
+.head .chev{color:var(--mut);transition:transform .15s}
+.item.open .chev{transform:rotate(90deg)}
+.body{padding:0 12px 12px;display:flex;flex-direction:column;gap:8px}
+.th{position:relative;aspect-ratio:16/9;background:#000;cursor:pointer;border:0;padding:0;border-radius:8px;overflow:hidden;width:100%}
 .th img{width:100%;height:100%;object-fit:cover;display:block}
 .th .pl{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:34px;text-shadow:0 0 8px #000}
 .th .t{position:absolute;right:6px;bottom:6px;background:#000c;color:#fff;font-size:12px;padding:1px 6px;border-radius:4px}
-.cb{padding:10px;display:flex;flex-direction:column;gap:6px;flex:1}
-.cb b{line-height:1.3}
-.path{color:var(--mut);font-size:13px}
-.badge{display:inline-block;font-size:11px;border:1px solid var(--bd);border-radius:4px;padding:0 5px;margin-left:4px;color:var(--mut)}
-.cb textarea{width:100%;font-size:13px;resize:vertical;min-height:38px;border-style:dashed}
-.act{display:flex;gap:4px;flex-wrap:wrap;margin-top:auto}
+.badge{display:inline-block;font-size:11px;border:1px solid var(--bd);border-radius:4px;padding:0 5px;color:var(--mut)}
+.body textarea{width:100%;font-size:13px;resize:vertical;min-height:38px;border-style:dashed}
+.act{display:flex;gap:4px;flex-wrap:wrap}
 .act button{padding:4px 8px;font-size:13px}
 .act .tg.on{background:var(--acbg);border-color:var(--ac)}
 .act .r{margin-left:auto}
 .empty{color:var(--mut);padding:40px 16px;text-align:center;grid-column:1/-1}
 
+/* ----- combos ----- */
+#vCombos{padding:16px}
+.clist{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.citem{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;text-align:left;width:100%}
+.citem b{display:block;font-size:16px}
+.ctool{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.ctitle{flex:1;min-width:140px;display:flex;flex-direction:column}
+.ctitle b{font-size:17px}
+.chint{margin-bottom:10px}
+.diagram{position:relative;overflow:auto;background:var(--card);border:1px solid var(--bd);border-radius:10px;height:calc(100vh - 190px);min-height:320px;-webkit-overflow-scrolling:touch}
+.canvas{position:relative;margin:20px}
+.canvas svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.canvas path{fill:none;stroke:var(--line);stroke-width:2}
+.node{position:absolute;width:160px;height:72px;background:var(--bg);border:1.5px solid var(--bd);border-radius:10px;display:flex;flex-direction:column;justify-content:space-between;padding:6px 8px}
+.node.root{background:var(--root);color:var(--rootx);border-color:var(--root)}
+.node .nm{font-weight:600;font-size:14px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.node .nb{display:flex;gap:2px;justify-content:flex-end}
+.node .nb button{padding:0 6px;font-size:13px;line-height:22px;border-radius:6px;background:var(--card);color:var(--tx)}
+.node .nb button.off{opacity:.35}
+.via{position:absolute;max-width:150px;transform:translate(-50%,-50%);background:var(--acbg);color:var(--ac);font-size:11px;line-height:1.25;padding:2px 7px;border-radius:99px;text-align:center}
+
 dialog{border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx);padding:18px;width:min(540px,94vw);max-height:92vh}
 dialog::backdrop{background:#0008}
 dialog h3{margin:0 0 6px}
+dialog details{margin-top:12px;border:1px solid var(--bd);border-radius:8px;padding:8px 10px}
+dialog summary{cursor:pointer}
 label{display:block;margin:10px 0 3px;font-size:13px;color:var(--mut)}
 dialog input:not([type=checkbox]),dialog select,dialog textarea{width:100%}
+.desc{white-space:pre-wrap;line-height:1.5;max-height:60vh;overflow:auto}
 .row{display:flex;gap:10px}.row>*{flex:1;min-width:0}
 .checks label{display:flex;align-items:center;gap:6px;color:var(--tx);font-size:15px}
 .sel{display:flex;gap:4px}.sel select{flex:1;min-width:0}.sel button{padding:8px 12px}
@@ -72,9 +108,13 @@ dialog input:not([type=checkbox]),dialog select,dialog textarea{width:100%}
   header{padding:8px 12px;flex-wrap:wrap}
   header h1{display:none}
   .icon{display:block}
+  #q{order:10;flex-basis:100%}
   .layout{padding:12px;display:block}
+  #vCombos{padding:12px}
   aside{position:fixed;inset:0 25% 0 0;top:0;max-height:none;z-index:20;border-radius:0;transform:translateX(-105%);transition:transform .2s;width:auto}
   body.side aside{transform:none;box-shadow:0 0 0 100vmax #0006}
+  .list{grid-template-columns:1fr}
   .row{flex-direction:column;gap:0}
   .row.checks{flex-direction:row;gap:16px}
+  .diagram{height:calc(100vh - 220px)}
 }

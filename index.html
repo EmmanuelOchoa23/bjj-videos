@@ -26,6 +26,10 @@
 <header>
   <button id="menu" class="icon" aria-label="Ver posiciones">☰</button>
   <h1>🥋 BJJ Videos</h1>
+  <nav class="tabs">
+    <button data-view="videos" class="on">Videos</button>
+    <button data-view="combos">Combos</button>
+  </nav>
   <input id="q" type="search" placeholder="Buscar título, técnica, nota…">
   <button class="p" id="add">+ Agregar</button>
   <details class="more">
@@ -41,7 +45,8 @@
 </header>
 <div id="localwarn" class="warn" hidden>Modo local: los videos se guardan solo en este navegador hasta que conectemos la nube.</div>
 
-<div class="layout">
+<!-- ===== Vista: videos ===== -->
+<div class="layout" id="vVideos">
   <aside id="side">
     <div id="tree"></div>
     <button id="newposside" class="ghost">+ Nueva posición</button>
@@ -56,11 +61,27 @@
         <button class="chip" data-f="prac">🔁 Por practicar</button>
       </div>
     </div>
-    <div class="grid" id="grid"></div>
+    <div class="list" id="grid"></div>
   </main>
 </div>
+
+<!-- ===== Vista: combos ===== -->
+<section id="vCombos" hidden>
+  <div id="clist" class="clist"></div>
+  <div id="cdetail" hidden>
+    <div class="ctool">
+      <button id="cback">← Combos</button>
+      <div class="ctitle"><b id="cname"></b><span class="mut small" id="cinfo"></span></div>
+      <button id="cren">Renombrar</button>
+      <button id="cdel">🗑</button>
+    </div>
+    <div class="mut small chint">Tocá <b>＋</b> en un cuadrito para agregar la técnica que sigue. <b>📝</b> descripción · <b>▶</b> video · <b>✎</b> editar.</div>
+    <div id="diagram" class="diagram"></div>
+  </div>
+</section>
 </div>
 
+<!-- Agregar / editar video -->
 <dialog id="ed">
   <form method="dialog" id="f">
     <h3 id="edt">Agregar video</h3>
@@ -93,11 +114,61 @@
   </form>
 </dialog>
 
+<!-- Nuevo combo -->
+<dialog id="cdlg">
+  <form method="dialog" id="cform">
+    <h3 id="cdt">Nuevo combo</h3>
+    <label for="cnm">Nombre del combo</label>
+    <input id="cnm" required placeholder="Ej: Combo de raspados">
+    <label for="cpos">Posición de inicio</label>
+    <input id="cpos" required list="cposl" placeholder="Ej: Guardia cerrada">
+    <datalist id="cposl"></datalist>
+    <div class="foot"><button type="button" id="ccx">Cancelar</button><button class="p">Guardar</button></div>
+  </form>
+</dialog>
+
+<!-- Agregar / editar cuadrito del combo -->
+<dialog id="nd">
+  <form method="dialog" id="nform">
+    <h3 id="ndt">Nueva técnica</h3>
+    <div id="ndfrom" class="mut small"></div>
+    <div id="ndviaw">
+      <label for="ndvia">Cuándo se usa (texto de la flecha, opcional)</label>
+      <input id="ndvia" placeholder="Ej: si defiende con el brazo">
+    </div>
+    <label for="ndname">Nombre de la técnica</label>
+    <input id="ndname" required placeholder="Ej: Hip bump">
+    <label for="nddesc">Descripción (con tus palabras)</label>
+    <textarea id="nddesc" rows="5" placeholder="Cómo se hace, detalles, errores comunes…"></textarea>
+    <details id="ndvid">
+      <summary>🎬 Video (opcional)</summary>
+      <label for="ndclip">Elegir de mi biblioteca</label>
+      <select id="ndclip"></select>
+      <label for="ndurl">…o pegar un link de YouTube</label>
+      <input id="ndurl" inputmode="url" placeholder="https://youtu.be/...">
+      <label for="ndstart">Empieza en (min:seg)</label>
+      <input id="ndstart" placeholder="Ej: 1:30" inputmode="numeric">
+    </details>
+    <div class="foot">
+      <button type="button" id="ndel" class="danger">Borrar</button>
+      <button type="button" id="ndcx">Cancelar</button><button class="p">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Ver descripción -->
+<dialog id="dd">
+  <h3 id="ddt"></h3>
+  <div id="ddtx" class="desc"></div>
+  <div class="foot"><button id="dded">✎ Editar</button><button id="ddx" class="p">Cerrar</button></div>
+</dialog>
+
+<!-- Reproductor -->
 <dialog id="pl">
   <div id="plc"></div>
   <h3 id="plt"></h3>
   <div class="mut small" id="plp"></div>
-  <label for="pln">Notas</label>
+  <label for="pln" id="plnl">Notas</label>
   <textarea id="pln" rows="3" placeholder="Escribí tus notas…"></textarea>
   <div class="foot">
     <a id="yt" target="_blank" rel="noopener">Abrir en YouTube ↗</a>

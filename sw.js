@@ -1,5 +1,5 @@
 // Guarda la app para que abra rápido y sin conexión. Siempre intenta la versión nueva primero.
-const C = 'bjj-videos-v1';
+const C = 'bjj-videos-v2';
 const SHELL = ['./', 'index.html', 'app.js', 'style.css', 'config.js', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(SHELL))); self.skipWaiting(); });
