@@ -11,7 +11,16 @@ button.big{padding:12px 20px;font-size:16px}
 button.ghost{background:none;border-style:dashed;width:100%;margin-top:6px;color:var(--mut)}
 .mut{color:var(--mut)}.small{font-size:13px}.err{color:#d33}
 .center{min-height:100vh;display:grid;place-items:center;padding:16px}
-.loginbox{text-align:center;max-width:320px}.loginbox img{border-radius:16px}
+.loginbox{text-align:center;width:min(340px,100%)}.loginbox img{border-radius:16px}
+.loginbox .big{width:100%}
+.loginbox a{color:var(--ac);line-height:2}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#1a1a1a;border-color:#ccc}
+.gbtn .g{font-weight:700;color:#4285f4;font-size:18px}
+.or{display:flex;align-items:center;gap:10px;color:var(--mut);font-size:13px;margin:16px 0}
+.or:before,.or:after{content:"";flex:1;border-top:1px solid var(--bd)}
+.lform{display:flex;flex-direction:column;gap:8px}
+.lform input{width:100%}
+.ok{color:#2a8a4a}
 
 header{display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--bd);position:sticky;top:0;background:var(--bg);z-index:5}
 header h1{font-size:18px;margin:0;white-space:nowrap}

@@ -8,7 +8,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 
@@ -17,8 +17,20 @@
     <img src="icon-192.png" width="72" height="72" alt="">
     <h1>BJJ Videos</h1>
     <p>Tu biblioteca de técnicas, en la PC y en el celular.</p>
-    <button class="p big" id="gbtn">Entrar con Google</button>
+    <button class="big gbtn" id="gbtn"><span class="g">G</span> Entrar con Google</button>
+    <div class="or"><span>o con tu email</span></div>
+    <form id="lform" class="lform">
+      <input id="lmail" type="email" autocomplete="email" required placeholder="Email">
+      <input id="lpass" type="password" autocomplete="current-password" required minlength="6" placeholder="Contraseña">
+      <input id="lpass2" type="password" autocomplete="new-password" minlength="6" placeholder="Repetí la contraseña" hidden>
+      <button class="p big" id="lgo">Entrar</button>
+    </form>
     <p id="lerr" class="err"></p>
+    <p id="lok" class="ok"></p>
+    <p class="small">
+      <a href="#" id="lmode">¿No tenés cuenta? Crear una</a><br>
+      <a href="#" id="lforgot">¿Olvidaste tu contraseña?</a>
+    </p>
   </div>
 </div>
 
@@ -180,6 +192,6 @@
 </dialog>
 
 <div id="toast"></div>
-<script type="module" src="app.js?v=5"></script>
+<script type="module" src="app.js?v=6"></script>
 </body>
 </html>

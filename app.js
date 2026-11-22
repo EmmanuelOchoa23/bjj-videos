@@ -53,14 +53,33 @@ function localStore() {
   };
 }
 
-/* ---------- almacenamiento: Firebase (nube + login Google) ---------- */
+/* Mensajes claros para los errores de inicio de sesión */
+function authMsg(e) {
+  const m = {
+    'auth/invalid-credential': 'Email o contraseña incorrectos. Si siempre entraste con Google, usá el botón de Google.',
+    'auth/wrong-password': 'Email o contraseña incorrectos.',
+    'auth/user-not-found': 'Email o contraseña incorrectos.',
+    'auth/invalid-email': 'Ese email no es válido.',
+    'auth/email-already-in-use': 'Ya hay una cuenta con ese email. Tocá "Entrar" (o "Entrar con Google" si es tu Gmail).',
+    'auth/weak-password': 'La contraseña tiene que tener al menos 6 caracteres.',
+    'auth/too-many-requests': 'Demasiados intentos. Esperá unos minutos y probá de nuevo.',
+    'auth/operation-not-allowed': 'El acceso con email todavía no está activado en Firebase.',
+    'auth/network-request-failed': 'Sin conexión a internet.',
+    'auth/popup-closed-by-user': 'Se cerró la ventana de Google antes de terminar.',
+    'auth/account-exists-with-different-credential': 'Ese email ya tiene cuenta con otro método. Entrá con email y contraseña.',
+  };
+  return m[e.code] || 'No se pudo entrar (' + (e.code || e.message) + ').';
+}
+
+/* ---------- almacenamiento: Firebase (nube + login Google o email) ---------- */
 async function firebaseStore() {
   const B = 'https://www.gstatic.com/firebasejs/10.12.2/';
   const [{ initializeApp }, A, F] = await Promise.all([
     import(B + 'firebase-app.js'), import(B + 'firebase-auth.js'), import(B + 'firebase-firestore.js')]);
   const app = initializeApp(firebaseConfig);
   const auth = A.getAuth(app);
-  const db = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) });
+  auth.languageCode = 'es'; // emails de Firebase (recuperar contraseña) en español
+  const db =F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) });
   const user = await new Promise(res => { const u = A.onAuthStateChanged(auth, x => { u(); res(x); }); });
   const login = async () => {
     const p = new A.GoogleAuthProvider();
@@ -70,7 +89,15 @@ async function firebaseStore() {
       else throw e;
     }
   };
-  if (!user) return { mode: 'cloud', user: null, login };
+  // Email y contraseña. Las contraseñas las guarda Firebase (encriptadas); la app nunca las almacena.
+  const emailLogin = async (mail, pass) => { await A.signInWithEmailAndPassword(auth, mail, pass); location.reload(); };
+  const emailSignup = async (mail, pass) => {
+    const r = await A.createUserWithEmailAndPassword(auth, mail, pass);
+    try { await A.sendEmailVerification(r.user); } catch (e) {}
+    location.reload();
+  };
+  const resetPass = mail => A.sendPasswordResetEmail(auth, mail);
+  if (!user) return { mode: 'cloud', user: null, login, emailLogin, emailSignup, resetPass };
   const base = `users/${user.uid}`;
   const clipsCol = F.collection(db, base, 'clips');
   const combosCol = F.collection(db, base, 'combos');
@@ -115,7 +142,33 @@ try {
 
 if (!store.user) {
   $('#login').hidden = false;
-  $('#gbtn').onclick = () => store.login().catch(e => { $('#lerr').textContent = 'No se pudo entrar: ' + (e.code || e.message); });
+  let signup = false;
+  const msg = (err, ok = '') => { $('#lerr').textContent = err; $('#lok').textContent = ok; };
+  const busy = b => { $('#lgo').disabled = b; $('#gbtn').disabled = b; };
+  $('#gbtn').onclick = () => { msg(''); busy(true); store.login().catch(e => { msg(authMsg(e)); busy(false); }); };
+  $('#lmode').onclick = e => {
+    e.preventDefault(); signup = !signup; msg('');
+    $('#lpass2').hidden = !signup; $('#lpass2').required = signup;
+    $('#lpass').autocomplete = signup ? 'new-password' : 'current-password';
+    $('#lgo').textContent = signup ? 'Crear cuenta' : 'Entrar';
+    $('#lmode').textContent = signup ? '¿Ya tenés cuenta? Entrar' : '¿No tenés cuenta? Crear una';
+    $('#lforgot').hidden = signup;
+  };
+  $('#lform').onsubmit = async e => {
+    e.preventDefault(); msg('');
+    const mail = $('#lmail').value.trim(), pass = $('#lpass').value;
+    if (signup && pass !== $('#lpass2').value) return msg('Las contraseñas no coinciden.');
+    busy(true);
+    try { await (signup ? store.emailSignup(mail, pass) : store.emailLogin(mail, pass)); }
+    catch (err) { msg(authMsg(err)); busy(false); }
+  };
+  $('#lforgot').onclick = async e => {
+    e.preventDefault();
+    const mail = $('#lmail').value.trim();
+    if (!mail) return msg('Escribí tu email arriba y volvé a tocar "¿Olvidaste tu contraseña?".');
+    try { await store.resetPass(mail); msg('', 'Si hay una cuenta con ese email, te llegó un correo para crear una contraseña nueva (mirá también en spam).'); }
+    catch (err) { msg(authMsg(err)); }
+  };
 } else {
   $('#app').hidden = false;
   $('#localwarn').hidden = store.mode !== 'local';
