@@ -266,7 +266,9 @@ function init() {
     if (view === 'combos') renderCombos();
     const ae = document.activeElement;
     if (ae && ae.dataset && ae.dataset.note) return; // no pisar lo que estás escribiendo
-    const vs = data.clips.filter(visible).sort((a, b) => (b.added || 0) - (a.added || 0));
+    // Orden: 🥋 Entrenando → 🔁 Por practicar → ⭐ Favoritos → el resto; dentro de cada grupo, los más nuevos primero
+    const rank = c => c.train ? 0 : c.prac ? 1 : c.fav ? 2 : 3;
+    const vs = data.clips.filter(visible).sort((a, b) => rank(a) - rank(b) || (b.added || 0) - (a.added || 0));
     $('#grid').innerHTML = vs.length ? vs.map(itemHTML).join('')
       : `<div class="empty">${data.clips.length ? 'Nada coincide con esta búsqueda o filtro.' : 'Todavía no hay videos. Tocá “+ Agregar” o compartí un video desde YouTube.'}</div>`;
   }
