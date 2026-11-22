@@ -199,8 +199,21 @@ input[type=checkbox]{accent-color:var(--ac);width:18px;height:18px}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#2a303c;color:#fff;padding:9px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50;box-shadow:0 8px 30px #0008}
 #toast.show{opacity:1}
 
-/* Barra inferior: solo en celular */
+/* Barra inferior y navegación por posición: solo en celular */
 .bottomnav{display:none}
+.mnav{display:none}
+.seg{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:3px}
+.seg button{flex:1;border:0;background:none;border-radius:9px;padding:9px 8px;color:var(--mut);font-weight:600}
+.seg button.on{background:var(--card2);color:var(--tx);box-shadow:0 1px 4px #0006}
+.seg .c{font-weight:500;font-size:12px;color:var(--mut);margin-left:2px}
+.mrow-l{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);font-weight:700;margin:14px 0 7px}
+.hscroll{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:0 -12px;padding:0 12px 2px}
+.hscroll::-webkit-scrollbar{display:none}
+.pill{flex-shrink:0;white-space:nowrap;border-radius:99px;padding:7px 14px;font-size:14px;background:var(--card);font-weight:500}
+.pill .c{color:var(--mut);font-size:12px;margin-left:2px}
+.pill.on{background:var(--ac2);border-color:var(--ac2);color:#fff}
+.pill.on .c{color:#dbe5ff}
+.pill.add{border-style:dashed;border-color:#3a4a72;color:var(--ac);background:none}
 
 /* ===== Celular ===== */
 @media(max-width:760px){
@@ -210,8 +223,16 @@ input[type=checkbox]{accent-color:var(--ac);width:18px;height:18px}
   .brandbtn span{display:none}
   .vtitle{display:block}
   body.v-home header{display:none}
-  body.v-videos .icon{display:block}
   .layout{padding:12px;display:block}
+  .mnav{display:block;margin-bottom:4px}
+  #q{margin-bottom:10px}
+  /* Filtros en una sola fila deslizable */
+  .bar{display:block;margin:14px 0 12px}
+  #crumb{display:none}
+  .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -12px;padding:0 12px 2px}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex-shrink:0;white-space:nowrap;padding:6px 12px}
+  .bar:before{content:"Filtrar";display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:7px}
   .page{padding:12px}
   .home{padding-top:max(40px,calc(env(safe-area-inset-top) + 28px))}
   .brand{font-size:58px}

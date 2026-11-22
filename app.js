@@ -275,7 +275,53 @@ function init() {
       h += `<div class="n l2 addact" data-addact="${i}"><span>+ acción</span></div>`;
     });
     $('#tree').innerHTML = h;
+    renderMnav();
   }
+
+  /* ----- Celular: "Todas / Por posición" con filas deslizables ----- */
+  let posMode = false;
+  function renderMnav() {
+    const on = posMode || !!sel.pos;
+    const pill = (attrs, label, n, active) => `<button class="pill ${active ? 'on' : ''}" ${attrs}>${esc(label)}${n != null ? ` <span class="c">${n}</span>` : ''}</button>`;
+    let h = `<div class="seg">
+      <button data-mode="all" class="${on ? '' : 'on'}">Todas <span class="c">${data.clips.length}</span></button>
+      <button data-mode="pos" class="${on ? 'on' : ''}">Por posición</button></div>`;
+    if (on) {
+      h += `<div class="mrow-l">Posición</div><div class="hscroll">`
+        + data.tax.map((P, i) => pill(`data-mp="${i}"`, P.name, count(c => c.pos === P.name), sel.pos === P.name)).join('')
+        + `<button class="pill add" data-newpos="1">＋ Posición</button></div>`;
+      const i = data.tax.findIndex(P => P.name === sel.pos);
+      if (i >= 0) {
+        const P = data.tax[i];
+        h += `<div class="mrow-l">Acción</div><div class="hscroll">`
+          + P.acts.map((a, j) => pill(`data-mp="${i}" data-ma="${j}"`, a, count(c => c.pos === P.name && c.act === a), sel.act === a)).join('')
+          + `<button class="pill add" data-newact="${i}">＋ Acción</button></div>`;
+        const ts = sel.act ? techs(P.name, sel.act) : [];
+        if (ts.length) h += `<div class="mrow-l">Técnica</div><div class="hscroll">`
+          + ts.map(t => pill(`data-mp="${i}" data-ma="${P.acts.indexOf(sel.act)}" data-mt="${esc(t)}"`, t, null, sel.tec === t)).join('') + `</div>`;
+      }
+    }
+    $('#mnav').innerHTML = h;
+    // Deja visible (centrado) el botón elegido en cada fila
+    $('#mnav').querySelectorAll('.hscroll').forEach(r => { const b = r.querySelector('.on'); if (b) r.scrollLeft = b.offsetLeft - r.offsetLeft - (r.clientWidth - b.offsetWidth) / 2; });
+  }
+  $('#mnav').onclick = async e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const d = b.dataset;
+    if (d.mode === 'all') { posMode = false; sel = { pos: null, act: null, tec: null }; }
+    else if (d.mode === 'pos') { posMode = true; }
+    else if (d.newpos) { const n = await newPos(); if (n) { posMode = true; sel = { pos: n, act: null, tec: null }; } }
+    else if (d.newact) { const P = data.tax[d.newact]; const n = await newAct(P.name); if (n) sel = { pos: P.name, act: n, tec: null }; }
+    else if (d.mp != null) {
+      const P = data.tax[d.mp];
+      const act = d.ma != null ? P.acts[d.ma] : null, tec = d.mt || null;
+      // Tocar de nuevo el que ya está elegido lo des-selecciona (vuelve un nivel)
+      if (tec) sel = sel.tec === tec ? { pos: P.name, act, tec: null } : { pos: P.name, act, tec };
+      else if (act) sel = sel.act === act && !sel.tec ? { pos: P.name, act: null, tec: null } : { pos: P.name, act, tec: null };
+      else sel = sel.pos === P.name && !sel.act ? { pos: null, act: null, tec: null } : { pos: P.name, act: null, tec: null };
+    }
+    render();
+  };
   $('#tree').onclick = e => {
     const n = e.target.closest('.n'); if (!n) return;
     if (n.dataset.addact) { newAct(data.tax[n.dataset.addact].name); return; }
