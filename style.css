@@ -236,6 +236,12 @@ input[type=checkbox]{accent-color:var(--ac);width:18px;height:18px}
 /* ===== Celular ===== */
 @media(max-width:760px){
   body{padding-bottom:calc(var(--navh) + env(safe-area-inset-bottom))}
+  /* Combo abierto: botones en una fila arriba, nombre del combo debajo */
+  .ctool{gap:6px;margin-bottom:12px}
+  .ctool button{padding:7px 12px;font-size:14px}
+  #cren{margin-left:auto}
+  .ctitle{order:10;flex-basis:100%;margin-top:8px}
+  .ctitle b{font-size:22px;line-height:1.2}
   header{padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top))}
   .tabs{display:none}
   .brandbtn span{display:none}
