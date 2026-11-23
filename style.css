@@ -299,3 +299,15 @@ input[type=checkbox]{accent-color:var(--ac);width:18px;height:18px}
 #arej h3{margin-top:16px}
 .aform{display:flex;gap:8px;margin-bottom:10px}
 .aform input{flex:1;min-width:0}
+
+/* Texto de las flechas: se puede tocar para editarlo */
+.via{cursor:pointer;font-family:inherit}
+.via:hover{border-color:var(--ac)}
+.via:active{transform:translate(-50%,-50%) scale(.96)}
+.via.add{background:var(--bg2);color:var(--mut);border-style:dashed;border-color:var(--bd);opacity:.75}
+
+/* Minuto de inicio: casilleros de minutos y segundos */
+.tsplit{display:flex;align-items:center;gap:6px}
+.tsplit input{width:72px!important;flex:0 0 auto;text-align:center;font-size:17px;padding:8px 6px}
+.tsplit span{color:var(--mut);font-size:14px;margin-right:6px}
+.tsplit input:disabled{opacity:.4}

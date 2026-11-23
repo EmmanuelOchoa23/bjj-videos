@@ -26,14 +26,25 @@ function ytStart(u) {
 }
 /* Instagram: publicaciones y reels públicos (sin minuto de inicio ni miniatura) */
 const igId = u => (String(u).match(/instagram\.com\/(?:[\w.]+\/)?(?:p|reels?|tv)\/([\w-]+)/) || [])[1];
-/* Devuelve {yt,ig,start} a partir de un link, o null si no es de YouTube ni Instagram */
-function parseVideo(u, startTxt) {
-  const y = ytId(u); if (y) return { yt: y, ig: null, start: startTxt != null && startTxt !== '' ? parseT(startTxt) : ytStart(u) };
+/* Devuelve {yt,ig,start} a partir de un link, o null si no es de YouTube ni Instagram.
+   startSecs: segundos elegidos en los casilleros (null = usar el minuto que traiga el link) */
+function parseVideo(u, startSecs) {
+  const y = ytId(u); if (y) return { yt: y, ig: null, start: startSecs != null ? startSecs : ytStart(u) };
   const i = igId(u); if (i) return { yt: null, ig: i, start: 0 };
   return null;
 }
 const videoUrl = v => v.ig ? `https://www.instagram.com/p/${v.ig}/` : v.yt ? `https://youtu.be/${v.yt}` : '';
 const hasVideo = v => !!(v.yt || v.ig);
+/* Minuto de inicio en dos casilleros: <p>m (minutos) y <p>s (segundos). Vacíos = null */
+function getStart(p) {
+  const m = $(`#${p}m`).value.trim(), s = $(`#${p}s`).value.trim();
+  if (m === '' && s === '') return null;
+  return Math.max(0, parseInt(m, 10) || 0) * 60 + Math.max(0, parseInt(s, 10) || 0);
+}
+function setStart(p, secs) {
+  $(`#${p}m`).value = secs ? Math.floor(secs / 60) : '';
+  $(`#${p}s`).value = secs ? String(secs % 60).padStart(2, '0') : '';
+}
 const parseT = s => { if (!s) return 0; const p = String(s).trim().split(':').map(Number); return p.some(isNaN) ? 0 : p.reduce((a, b) => a * 60 + b, 0); };
 const fmtT = n => { if (!n) return ''; const h = Math.floor(n / 3600), m = Math.floor(n % 3600 / 60), s = n % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0'); };
 function toast(msg) { const e = $('#toast'); e.textContent = msg; e.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => e.classList.remove('show'), 1800); }
@@ -635,7 +646,7 @@ function init() {
     fillPos(id ? c.pos : (c?.pos || sel.pos));
     fillAct(id ? c.act : (c?.act || sel.act));
     $('#tec').value = id ? c.tec || '' : (from ? '' : sel.tec || '');
-    $('#start').value = id ? fmtT(c.start) : (url ? fmtT(ytStart(url)) : '');
+    setStart('start', id ? c.start : (url ? ytStart(url) : 0));
     syncStart();
     $('#gi').value = c?.gi || flt.gi || 'gi';
     $('#fav').checked = id ? !!c.fav : false;
@@ -650,14 +661,14 @@ function init() {
   /* Instagram no permite elegir minuto: se desactiva el campo */
   function syncStart() {
     const ig = !!igId($('#url').value);
-    $('#start').disabled = ig;
-    if (ig) $('#start').value = '';
-    $('#start').placeholder = t(ig ? 'No disponible en Instagram' : 'Ej: 3:25');
+    $('#startm').disabled = $('#starts').disabled = ig;
+    if (ig) setStart('start', 0);
+    $('#startm').closest('.tsplit').title = ig ? t('No disponible en Instagram') : '';
   }
   async function fetchTitle() {
     syncStart();
     const id = ytId($('#url').value); if (!id) return;
-    const s = ytStart($('#url').value); if (s && !$('#start').value) $('#start').value = fmtT(s);
+    const s = ytStart($('#url').value); if (s && getStart('start') == null) setStart('start', s);
     try {
       const r = await fetch('https://noembed.com/embed?url=' + encodeURIComponent('https://www.youtube.com/watch?v=' + id));
       const j = await r.json();
@@ -669,7 +680,7 @@ function init() {
 
   $('#f').onsubmit = async e => {
     e.preventDefault();
-    const v = parseVideo($('#url').value, $('#start').value);
+    const v = parseVideo($('#url').value, getStart('start'));
     if (!v) return alert(t('Ese link no parece de YouTube ni de Instagram.'));
     if (!$('#pos').value) return alert(t('Elegí o creá una posición (botón +).'));
     if (v.ig && !$('#title').value.trim()) return alert(t('Los videos de Instagram no traen título: escribí uno.'));
@@ -770,7 +781,10 @@ function init() {
       if (!root && pos[n.parent]) {
         const x1 = px(n.parent) + NW / 2, y1 = py(n.parent) + NH, x2 = x + NW / 2, y2 = y, my = (y1 + y2) / 2;
         paths += `<path d="M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}"/><path d="M${x2 - 5},${y2 - 7} L${x2},${y2} L${x2 + 5},${y2 - 7}"/>`;
-        if (n.via) labels += `<div class="via" style="left:${x2}px;top:${my + 6}px">${esc(n.via)}</div>`;
+        // El texto de la flecha se toca para editarlo; si no tiene, aparece un "+ texto" discreto
+        labels += n.via
+          ? `<button class="via" data-via="${n.id}" style="left:${x2}px;top:${my + 6}px" title="${t('Editar texto de la flecha')}">${esc(n.via)}</button>`
+          : `<button class="via add" data-via="${n.id}" style="left:${x2}px;top:${my + 6}px" title="${t('Agregar texto a la flecha')}">${t('+ texto')}</button>`;
       }
       boxes += `<div class="node ${root ? 'root' : ''}" style="left:${x}px;top:${y}px">
         <div class="nm" title="${esc(n.name)}">${esc(n.name)}</div>
@@ -785,7 +799,24 @@ function init() {
       <svg width="${W}" height="${H}">${paths}</svg>${labels}${boxes}</div>`;
   }
 
+  /* --- texto de una flecha --- */
+  let viaNode = null;
+  function openVia(n) {
+    viaNode = n;
+    const par = combo().nodes.find(x => x.id === n.parent);
+    $('#vfrom').textContent = t('De {a} → {b}', { a: par ? par.name : '', b: n.name });
+    $('#vtext').value = n.via || '';
+    $('#vclear').hidden = !n.via;
+    $('#vdlg').showModal();
+    $('#vtext').focus();
+  }
+  $('#vcx').onclick = () => $('#vdlg').close();
+  $('#vclear').onclick = async () => { $('#vdlg').close(); await saveNode(viaNode.id, { via: '' }); };
+  $('#vform').onsubmit = async e => { e.preventDefault(); $('#vdlg').close(); await saveNode(viaNode.id, { via: $('#vtext').value.trim() }); toast(t('Guardado')); };
+
   $('#diagram').onclick = e => {
+    const v = e.target.closest('[data-via]');
+    if (v) return openVia(combo().nodes.find(x => x.id === v.dataset.via));
     const b = e.target.closest('[data-nd]'); if (!b) return;
     const c = combo(), n = c.nodes.find(x => x.id === b.dataset.n);
     if (b.dataset.nd === 'add') openNode({ parent: n });
@@ -825,7 +856,7 @@ function init() {
       .sort((a, b) => (a.title || a.ytTitle || '').localeCompare(b.title || b.ytTitle || ''))
       .map(c => `<option value="${c.id}">${esc(c.title || c.ytTitle || t('Sin título'))}${c.tec ? ' · ' + esc(c.tec) : ''}</option>`).join('');
     $('#ndurl').value = node ? videoUrl(node) : '';
-    $('#ndstart').value = node?.start ? fmtT(node.start) : '';
+    setStart('ndstart', node?.start || 0);
     $('#ndvid').open = !!node && hasVideo(node);
     $('#ndel').hidden = !node || root;
     $('#nd').showModal();
@@ -834,15 +865,15 @@ function init() {
   $('#ndclip').onchange = () => {
     const c = data.clips.find(x => x.id === $('#ndclip').value); if (!c) return;
     $('#ndurl').value = videoUrl(c);
-    $('#ndstart').value = c.ig ? '' : fmtT(c.start);
+    setStart('ndstart', c.ig ? 0 : c.start);
     if (!$('#ndname').value) $('#ndname').value = c.tec || c.title || c.ytTitle || '';
   };
-  $('#ndurl').onchange = () => { const s = ytStart($('#ndurl').value); if (s && !$('#ndstart').value) $('#ndstart').value = fmtT(s); };
+  $('#ndurl').onchange = () => { const s = ytStart($('#ndurl').value); if (s && getStart('ndstart') == null) setStart('ndstart', s); };
   $('#ndcx').onclick = () => $('#nd').close();
   $('#nform').onsubmit = async e => {
     e.preventDefault();
     const name = $('#ndname').value.trim(); if (!name) return;
-    const url = $('#ndurl').value.trim(), v = url ? parseVideo(url, $('#ndstart').value) : { yt: null, ig: null, start: 0 };
+    const url = $('#ndurl').value.trim(), v = url ? parseVideo(url, getStart('ndstart')) : { yt: null, ig: null, start: 0 };
     if (!v) return alert(t('Ese link no parece de YouTube ni de Instagram.'));
     const d = { name, via: $('#ndvia').value.trim(), desc: $('#nddesc').value.trim(), ...v };
     const c = combo();

@@ -9,12 +9,12 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0e1014">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png?v=14">
-<link rel="apple-touch-icon" href="icon-192.png?v=14">
+<link rel="icon" href="icon-192.png?v=15">
+<link rel="apple-touch-icon" href="icon-192.png?v=15">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
 
@@ -208,7 +208,11 @@
     <input id="tec" list="tecs" placeholder="Ej: Triángulo">
     <datalist id="tecs"></datalist>
     <div class="row">
-      <div><label for="start">Empieza en (min:seg)</label><input id="start" placeholder="Ej: 3:25" inputmode="numeric"></div>
+      <div><label for="startm">El video empieza en</label>
+        <div class="tsplit">
+          <input id="startm" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Minutos"><span>min</span>
+          <input id="starts" type="number" inputmode="numeric" min="0" max="59" step="1" placeholder="00" aria-label="Segundos"><span>seg</span>
+        </div></div>
       <div><label for="gi">Modalidad</label>
         <select id="gi"><option value="gi">Gi</option><option value="nogi">No-gi</option><option value="ambos">Ambos</option></select></div>
     </div>
@@ -220,6 +224,20 @@
     <label for="notes">Notas</label>
     <textarea id="notes" rows="3" placeholder="Detalles, errores comunes, tips…"></textarea>
     <div class="foot"><button type="button" id="cx">Cancelar</button><button class="p">Guardar</button></div>
+  </form>
+</dialog>
+
+<!-- Texto de una flecha del combo -->
+<dialog id="vdlg">
+  <form method="dialog" id="vform">
+    <h3>Texto de la flecha</h3>
+    <div id="vfrom" class="mut small"></div>
+    <label for="vtext">Cuándo se usa</label>
+    <input id="vtext" placeholder="Ej: si defiende con el brazo">
+    <div class="foot">
+      <button type="button" id="vclear" class="danger">Quitar texto</button>
+      <button type="button" id="vcx">Cancelar</button><button class="p">Guardar</button>
+    </div>
   </form>
 </dialog>
 
@@ -255,8 +273,11 @@
       <select id="ndclip"></select>
       <label for="ndurl">…o pegar un link de YouTube o Instagram</label>
       <input id="ndurl" inputmode="url" placeholder="https://youtu.be/...">
-      <label for="ndstart">Empieza en (min:seg)</label>
-      <input id="ndstart" placeholder="Ej: 1:30" inputmode="numeric">
+      <label for="ndstartm">El video empieza en</label>
+      <div class="tsplit">
+        <input id="ndstartm" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Minutos"><span>min</span>
+        <input id="ndstarts" type="number" inputmode="numeric" min="0" max="59" step="1" placeholder="00" aria-label="Segundos"><span>seg</span>
+      </div>
     </details>
     <div class="foot">
       <button type="button" id="ndel" class="danger">Borrar</button>
@@ -311,6 +332,6 @@
 </dialog>
 
 <div id="toast"></div>
-<script type="module" src="app.js?v=14"></script>
+<script type="module" src="app.js?v=15"></script>
 </body>
 </html>

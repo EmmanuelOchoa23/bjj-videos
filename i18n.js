@@ -121,6 +121,12 @@ const EN = {
   'Qué querés practicar ese día…': 'What you want to practice that day…',
   'Ej: Siempre cerrar las rodillas en el triángulo.': 'E.g. Always squeeze the knees in the triangle.',
 
+  // --- Minuto de inicio y flechas ---
+  'El video empieza en': 'Video starts at', 'min': 'min', 'seg': 'sec', 'Minutos': 'Minutes', 'Segundos': 'Seconds',
+  'Texto de la flecha': 'Arrow text', 'Cuándo se usa': 'When to use it', 'Quitar texto': 'Remove text',
+  'De {a} → {b}': 'From {a} → {b}', '+ texto': '+ text',
+  'Editar texto de la flecha': 'Edit arrow text', 'Agregar texto a la flecha': 'Add text to the arrow',
+
   // --- Acceso / administrador ---
   'Confirmá tu email': 'Confirm your email', 'Solicitud enviada': 'Request sent', 'Solicitud rechazada': 'Request declined',
   'Te mandamos un email a {e}. Tocá el link que viene adentro y después volvé acá y tocá "Ya lo confirmé". Si no lo ves, mirá en spam.':
