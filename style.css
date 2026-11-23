@@ -311,3 +311,7 @@ input[type=checkbox]{accent-color:var(--ac);width:18px;height:18px}
 .tsplit input{width:72px!important;flex:0 0 auto;text-align:center;font-size:17px;padding:8px 6px}
 .tsplit span{color:var(--mut);font-size:14px;margin-right:6px}
 .tsplit input:disabled{opacity:.4}
+
+/* Reproductor de YouTube armado con la API: mantener 16:9 */
+#plc iframe:not(.ig){height:auto;aspect-ratio:16/9}
+#ytp{width:100%;aspect-ratio:16/9;background:#000;border-radius:10px}

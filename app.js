@@ -589,14 +589,53 @@ function init() {
   /* =====================================================
      REPRODUCTOR (sirve para técnicas y para cuadritos de combos)
      ===================================================== */
-  let onNoteSave = null;
+  let onNoteSave = null, ytPlayer = null;
+  /* API oficial del reproductor de YouTube: permite corregir el minuto si YouTube
+     "retoma donde lo dejaste" (pasa en el celular con videos ya vistos) */
+  let ytApi = null;
+  const loadYtApi = () => ytApi ||= new Promise((res, rej) => {
+    if (window.YT && window.YT.Player) return res(window.YT);
+    let done = false;
+    const fail = () => { if (!done) { done = true; ytApi = null; rej(new Error('yt api')); } };
+    window.onYouTubeIframeAPIReady = () => { if (!done) { done = true; res(window.YT); } };
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    s.onerror = fail;
+    document.head.appendChild(s);
+    setTimeout(fail, 6000); // sin conexión o bloqueado: se usa el reproductor común
+  });
+  const plainYt = (yt, start) => `<iframe src="https://www.youtube.com/embed/${yt}?start=${start}&autoplay=1&rel=0&playsinline=1" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+  async function mountYt(yt, start) {
+    const token = (mountYt.n = (mountYt.n || 0) + 1);
+    $('#plc').innerHTML = '<div id="ytp"></div>';
+    try {
+      const YT = await loadYtApi();
+      if (token !== mountYt.n || !$('#pl').open) return; // se cerró o se abrió otro video mientras cargaba
+      let fixed = false;
+      ytPlayer = new YT.Player('ytp', {
+        videoId: yt,
+        playerVars: { start, autoplay: 1, rel: 0, playsinline: 1 },
+        events: {
+          onStateChange: e => {
+            // La primera vez que empieza a reproducirse: si no está en el minuto pedido, lo lleva ahí
+            if (fixed || e.data !== YT.PlayerState.PLAYING) return;
+            fixed = true;
+            if (Math.abs(e.target.getCurrentTime() - start) > 2) e.target.seekTo(start, true);
+          },
+        },
+      });
+    } catch (e) {
+      if (token === mountYt.n && $('#pl').open) $('#plc').innerHTML = plainYt(yt, start); // sin la API: reproductor común
+    }
+  }
   function play({ yt, ig, start, title, path, notes, label, save }) {
     if (ig) {
       $('#plc').innerHTML = `<iframe class="ig" src="https://www.instagram.com/p/${ig}/embed/" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen scrolling="no"></iframe>`;
       $('#yt').href = `https://www.instagram.com/p/${ig}/`;
       $('#yt').textContent = t('Abrir en Instagram ↗');
     } else {
-      $('#plc').innerHTML = `<iframe src="https://www.youtube.com/embed/${yt}?start=${start || 0}&autoplay=1&rel=0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+      $('#pl').showModal(); // se abre antes para que el reproductor se arme adentro
+      mountYt(yt, start || 0);
       $('#yt').href = `https://www.youtube.com/watch?v=${yt}&t=${start || 0}s`;
       $('#yt').textContent = t('Abrir en YouTube ↗');
     }
@@ -605,7 +644,7 @@ function init() {
     $('#plnl').textContent = t(label || 'Notas');
     $('#pln').value = notes || ''; $('#plsaved').textContent = '';
     onNoteSave = save;
-    $('#pl').showModal();
+    if (!$('#pl').open) $('#pl').showModal();
   }
   const playClip = c => play({
     yt: c.yt, ig: c.ig, start: c.start, title: c.title || c.ytTitle, notes: c.notes,
@@ -614,7 +653,11 @@ function init() {
   });
   $('#pln').onchange = async () => { if (onNoteSave) { await onNoteSave($('#pln').value.trim()); $('#plsaved').textContent = t('Guardado'); } };
   $('#plx').onclick = () => $('#pl').close();
-  $('#pl').onclose = () => { $('#plc').innerHTML = ''; onNoteSave = null; };
+  $('#pl').onclose = () => {
+    mountYt.n = (mountYt.n || 0) + 1; // cancela un reproductor que todavía esté cargando
+    try { ytPlayer && ytPlayer.destroy(); } catch (e) {}
+    ytPlayer = null; $('#plc').innerHTML = ''; onNoteSave = null;
+  };
 
   /* =====================================================
      FORMULARIO AGREGAR / EDITAR TÉCNICA
